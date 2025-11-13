@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>Photo Album - SVG Ragged Frame</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #dfeef1; }
+
+    /* shadow and "paper" look */
+    .polaroid-wrap {
+      filter: drop-shadow(0 8px 18px rgba(20,20,20,0.15));
+      transform-origin: center;
+    }
+    .polaroid-wrap:hover { transform: translateY(-6px) rotate(0deg); }
+
+    /* make SVG scale nicely */
+    .photo-svg { display: block; width: 100%; height: auto; }
+
+    /* modal background */
+    .modal-bg { background-color: rgba(0,0,0,0.6); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-8">
+
+  <h1 class="text-4xl text-slate-700 mb-6 italic">Photo Album</h1>
+
+  <div id="app" class="w-full max-w-6xl px-4">
+    <div class="flex flex-wrap justify-center gap-6">
+      <!-- each polaroid -->
+      <div v-for="(img, idx) in imageList" :key="idx"
+           class="w-56 polaroid-wrap cursor-pointer"
+           :style="{'transform': randomRotate(idx)}"
+           @click="openModal(img)">
+           <div>hello</div>
+        <!-- Component: SVG frame with clipped image -->
+        <photo :src="'https://gacon1.gacontamnang.com/images/levinh_kimanh/' + img" :caption="dates[idx % dates.length]"></photo>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-6" @click.self="closeModal">
+      <div class="max-w-[90vw] max-h-[90vh]">
+        <photo :src="'https://gacon1.gacontamnang.com/raw-images/levinh_kimanh/' + currentImage" :large="true" :caption="modalCaption"></photo>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, defineComponent } = Vue;
+
+    /* PhotoPolaroid component:
+       - uses SVG with clipPath that has ragged top & bottom edges and straight left/right.
+       - caption rendered below (italic).
+       - prop `large` toggles bigger view for modal.
+    */
+    // const PhotoPolaroid = defineComponent({
+    //   props: {
+    //     src: { type: String, required: true },
+    //     caption: { type: String, default: '' },
+    //     large: { type: Boolean, default: false }
+    //   },
+    //   template: `
+    //   <div class="flex flex-col items-center">
+    //     <svg :width="svgWidth" :height="svgHeight" viewBox="0 0 320 240" class="photo-svg bg-transparent">
+    //       <!-- Define jagged clip path: rectangle with zigzag top & bottom -->
+    //       <defs>
+    //         <clipPath id="clipRect" clipPathUnits="userSpaceOnUse">
+    //           <!-- Path: start at left-top (0,28) -> zigzag top -> right-top -> right-bottom zigzag -> left-bottom -> close -->
+    //           <path d="M 0 28
+    //                    L 18 18 L 36 30 L 54 20 L 72 30 L 90 22 L 108 32 L 126 18 L 144 28 L 162 20 L 180 34 L 198 24 L 216 34 L 234 18 L 252 30 L 270 20 L 288 30 L 320 28
+    //                    L 320 210
+    //                    L 288 198 L 270 210 L 252 200 L 234 212 L 216 200 L 198 210 L 180 196 L 162 210 L 144 200 L 126 212 L 108 198 L 90 210 L 72 200 L 54 212 L 36 198 L 18 210 L 0 210 Z" />
+    //         </clipPath>
+    //
+    //         <!-- White paper shape slightly larger to create border (we'll draw fill behind image) -->
+    //         <path id="paperPath" d="M 0 0 H 320 V 240 H 0 Z" />
+    //       </defs>
+    //
+    //       <!-- paper background: white card -->
+    //       <rect x="0" y="0" width="320" height="240" rx="6" ry="6" fill="#ffffff" stroke="#e6e6e6" />
+    //
+    //       <!-- inner area where image sits (apply clipPath for ragged top/bottom) -->
+    //       <!-- we offset image slightly to create visible white border around left/right -->
+    //       <g transform="translate(16,16)">
+    //         <!-- background behind image (paper inner) -->
+    //         <rect x="-6" y="-6" width="288" height="208" fill="#ffffff" />
+    //         <!-- the image clipped by jagged path (we use the clipPath) -->
+    //         <image :href="src" x="0" y="0" width="288" height="208" preserveAspectRatio="xMidYMid slice" clip-path="url(#clipRect)"></image>
+    //
+    //         <!-- optionally draw subtle torn shadow lines along top and bottom -->
+    //         <path d="M 0 0 L 288 0" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="2" transform="translate(0,0)" />
+    //         <path d="M 0 208 L 288 208" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="2" transform="translate(0,0)" />
+    //       </g>
+    //
+    //       <!-- decorative thin border (straight left/right) by drawing path overlay -->
+    //       <path d="M 10 10 H 310 V 230 H 10 Z" fill="none" stroke="#f3f3f3" stroke-width="1.5" />
+    //
+    //     </svg>
+    //
+    //     <!-- caption / date under the frame -->
+    //     <div class="mt-2 text-sm text-slate-600 italic select-none" :class="large ? 'text-lg' : ''">{{ caption }}</div>
+    //   </div>
+    //   `,
+    //   computed: {
+    //     svgWidth() { return this.large ? 800 : 320; },
+    //     svgHeight() { return this.large ? 600 : 240; }
+    //   }
+    // });
+
+    app = createApp({
+      data() {
+        return {
+          imageList: [],
+          showModal: false,
+          currentImage: null,
+          modalCaption: '',
+          dates: [
+            '28/01/22','15/03/22','09/05/22','01/06/22',
+            '22/08/22','12/10/22','16/07/22','28/11/22'
+          ]
+        };
+      },
+      mounted() {
+        fetch("https://gacon1.gacontamnang.com/images/levinh_kimanh")
+          .then(res => res.json())
+          .then(res => {
+            this.imageList = res["files"];
+          });
+      },
+      methods: {
+        randomRotate(i) {
+          const arr = ['rotate(-6deg)','rotate(-3deg)','rotate(1deg)','rotate(4deg)','rotate(2deg)'];
+          return arr[i % arr.length];
+        },
+        openModal(img) {
+          this.currentImage = img;
+          // set caption using filename index if available
+          const i = this.imageList.indexOf(img);
+          this.modalCaption = (i >= 0) ? this.dates[i % this.dates.length] : '';
+          this.showModal = true;
+        },
+        closeModal() { this.showModal = false; }
+      }
+    })
+
+    app.component('photo', {
+      props: ['src', 'caption', 'large'],
+      template: `
+        <div class="flex flex-col items-center">
+          <svg :width="svgWidth" :height="svgHeight" viewBox="0 0 320 240" class="photo-svg">
+            <defs>
+              <clipPath id="clipRect" clipPathUnits="userSpaceOnUse">
+                <path d="M 0 28
+                         L 18 18 L 36 30 L 54 20 L 72 30 L 90 22 L 108 32 L 126 18 L 144 28 L 162 20 L 180 34 L 198 24 L 216 34 L 234 18 L 252 30 L 270 20 L 288 30 L 320 28
+                         L 320 210
+                         L 288 198 L 270 210 L 252 200 L 234 212 L 216 200 L 198 210 L 180 196 L 162 210 L 144 200 L 126 212 L 108 198 L 90 210 L 72 200 L 54 212 L 36 198 L 18 210 L 0 210 Z" />
+              </clipPath>
+            </defs>
+
+            <!-- Khung giấy trắng -->
+            <rect x="0" y="0" width="320" height="240" rx="6" ry="6" fill="#ffffff" stroke="#e6e6e6" />
+
+            <!-- Ảnh cắt răng cưa -->
+            <g transform="translate(16,16)">
+              <rect x="-6" y="-6" width="288" height="208" fill="#ffffff" />
+              <image :href="src" x="0" y="0" width="288" height="208"
+                     preserveAspectRatio="xMidYMid slice"
+                     clip-path="url(#clipRect)"></image>
+            </g>
+
+            <!-- Viền ngoài mảnh -->
+            <path d="M 10 10 H 310 V 230 H 10 Z"
+                  fill="none" stroke="#f3f3f3" stroke-width="1.5" />
+          </svg>
+
+          <div class="mt-2 text-sm text-slate-600 italic select-none" :class="large ? 'text-lg' : ''">
+            {{ caption }}
+          </div>
+        </div>
+      `,
+      computed: {
+        svgWidth() { return this.large ? 800 : 320; },
+        svgHeight() { return this.large ? 600 : 240; }
+      }
+    });
+
+    app.mount('#app');
+  </script>
+</body>
+</html>

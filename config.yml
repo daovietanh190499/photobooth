@@ -1,0 +1,35 @@
+operating_system: Windows
+domain: https://gacon1.gacontamnang.com/
+topic: levinh_kimanh
+collection_name: gacon
+folders:
+  root_folder: C:\Users\Administrator\Documents
+  save_folder: $topic_folder\images\
+  processed_folder: $topic_folder\processed\
+  frame_folder: $topic_folder\frames\
+printer:
+  name: Canon SELPHY CP1000
+  code: CP1000
+camera:
+  name: Nikon D3300
+  code: D3300
+  streaming_camera_id: 1
+commands:
+  printer:
+    win_control_printer_command:
+    - rundll32
+    - shimgvw.dll,ImageView_PrintTo
+    - /pt
+    - $image_path
+    - $printer_code
+    win_stat_printer_command:
+    - powershell
+    - -Command
+    - Get-Printer | Select Name, PrinterStatus
+  camera:
+    win_control_cam_command: C:\Program Files (x86)\digiCamControl\CameraControlCmd.exe
+    win_stat_cam_command:
+    - powershell
+    - -Command
+    - Get-PnpDevice | Where-Object { $_.FriendlyName -like '*$camera_code*' } | Select-Object
+      FriendlyName, Status

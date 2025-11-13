@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Photo Album</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #e8f0f2;
+      background-image: radial-gradient(#cddfe2 1px, transparent 0);
+      background-size: 30px 30px;
+    }
+    .photo-frame {
+      @apply bg-white shadow-md rounded-lg border border-gray-200 p-2 transition-transform duration-300;
+      transform: rotate(var(--angle));
+    }
+    .photo-frame:hover {
+      transform: scale(1.05) rotate(var(--angle));
+      @apply shadow-lg;
+    }
+    .modal-bg {
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="min-h-screen flex flex-col items-center py-10">
+    <h1 class="text-4xl font-semibold text-gray-700 mb-8 italic">Photo Album</h1>
+
+    <div class="flex flex-wrap justify-center gap-6 px-4">
+      <div v-for="(image, index) in imageList" :key="index"
+           class="photo-frame cursor-pointer"
+           :style="{'--angle': randomRotation(index)}"
+           @click="openModal(image)">
+        <img :src="'https://gacon1.gacontamnang.com/images/levinh_kimanh/' + image"
+             class="w-56 h-40 object-cover rounded-sm">
+        <p class="text-center text-sm text-gray-600 mt-1 italic">{{ randomDate(index) }}</p>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div v-if="showModal"
+         class="fixed inset-0 flex items-center justify-center modal-bg z-50"
+         @click.self="closeModal">
+      <div class="bg-white p-4 rounded-xl shadow-xl border border-gray-300">
+        <img :src="'https://gacon1.gacontamnang.com/raw-images/levinh_kimanh/' + currentImage"
+             class="max-h-[80vh] max-w-[90vw] rounded-lg border-8 border-white shadow-lg">
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const { createApp } = Vue
+
+  createApp({
+    data() {
+      return {
+        imageList: [],
+        showModal: false,
+        currentImage: null
+      }
+    },
+    mounted() {
+      // Giả lập API trả danh sách ảnh
+      fetch("https://gacon1.gacontamnang.com/images/levinh_kimanh")
+        .then(res => res.json())
+        .then(res => {
+          this.imageList = res["files"];
+        });
+    },
+    methods: {
+      randomRotation(index) {
+        const angles = ['-4deg', '-2deg', '1deg', '3deg', '5deg'];
+        return angles[index % angles.length];
+      },
+      randomDate(index) {
+        const dates = [
+          '28/01/22','15/03/22','09/05/22','01/06/22',
+          '22/08/22','12/10/22','16/07/22','28/11/22'
+        ];
+        return dates[index % dates.length];
+      },
+      openModal(image) {
+        this.currentImage = image;
+        this.showModal = true;
+      },
+      closeModal() {
+        this.showModal = false;
+      }
+    }
+  }).mount('#app')
+  </script>
+</body>
+</html>

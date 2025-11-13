@@ -1,0 +1,712 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<title>Photography</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+
+	<!-- Font -->
+	<link href="https://fonts.googleapis.com/css?family=Poppins:400,500,600,700%7CAllura" rel="stylesheet">
+	<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pinky: '#ef7181',
+            soft: '#f6f6f6'
+          },
+          fontFamily: {
+            display: ['"Poppins"', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+	<style>
+		html{ font-size: 100%; height: 100%; overflow-x: hidden; margin: 0px;  padding: 0px;
+			touch-action: manipulation;  -webkit-box-sizing: border-box; box-sizing: border-box;}
+
+		body{ font-size: 15px; font-family: 'Poppins', serif; margin: 0; font-weight: 400;
+			-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; word-wrap: break-word;
+			line-height: 1; margin: 0 50px; padding: 60px 0; height: 100%;
+			 -webkit-box-sizing: border-box; box-sizing: border-box;
+			width: calc(100% - 100px); position: relative; z-index: 1; color: #333; }
+
+		h1, h2, h3, h4, h5, h6, p, a, ul, span, li, img, inpot, button{ margin: 0; padding: 0; }
+
+		h1,h2,h3,h4,h5,h6{ line-height: 1.5; font-weight: inherit; }
+
+		h1,h2,h3{ font-family: 'Poppins', cursive; }
+
+		p{ line-height: 1.6; font-size: 1.05em; font-weight: 400; color: #777; }
+
+		h1{ font-size: 4em; line-height: 1; }
+		h2{ font-size: 2.2em; line-height: 1.1; }
+		h3{ font-size: 1.8em; }
+		h4{ font-size: 1.3em; }
+		h5{ font-size: 1em; }
+		h6{ font-size: .9em; letter-spacing: 1px; }
+
+		a, button{ display: inline-block; text-decoration: none; color: inherit; line-height: 1;
+			-webkit-transition: all .25s ease-in-out; transition: all .25s ease-in-out; }
+
+		a:focus, a:active, a:hover,
+		button:focus, button:active, button:hover,
+		a b.light-color:hover{ text-decoration: none; color: #37D583; }
+
+		b{ font-weight: 600; }
+
+		img{ width: 100%; }
+
+		li{ list-style: none; display: inline-block; }
+
+		span{ display: inline-block; }
+
+		button{ outline: 0; border: 0; background: none; cursor: pointer; }
+
+		.icon{ font-size: 1.1em; display: inline-block; line-height: inherit; }
+
+		[class^="icon-"]:before, [class*=" icon-"]:before{ line-height: inherit; }
+
+		b.max-bold{ font-weight: 700; }
+
+		*, *::before, *::after {
+			-webkit-box-sizing: inherit;
+			box-sizing: inherit;
+		}
+
+		*, *::before, *::after {
+			-webkit-box-sizing: inherit;
+			box-sizing: inherit;}
+
+
+		/* ---------------------------------
+		2. COMMONS FOR PAGE DESIGN
+		--------------------------------- */
+
+		.display-table{ display: table; height: 100%; }
+		.display-table-cell{ display: table-cell; vertical-align: middle; }
+
+		.color-black{ color: #000; }
+		.color-green{ color: #36D98A; }
+
+		.margin-tb-10{ margin-top: 10px; margin-bottom: 10px; }
+
+		.margin-b-5{ margin-bottom: 5px; }
+		.margin-b-10{ margin-bottom: 10px; }
+		.margin-b-30{ margin-bottom: 30px; }
+
+
+
+		/* ---------------------------------
+		3. HEADER
+		--------------------------------- */
+
+		header{ position: absolute; top: 0; left: 0; right: 0; height: 60px; text-align: center; z-index: 1000; }
+
+		header:after{ content:''; clear: both; }
+
+		header .logo{ float: left; height: 40px; margin: 10px 0; }
+
+		header .logo img{ height: 100%; width: auto; }
+
+
+		header .main-menu{ float: right; }
+
+		header ul.main-menu > li > a{ height: 100%; line-height: 60px; padding: 0 10px; }
+
+
+		header .right-area{ float: right; height: 100%; line-height: 60px; margin-left: 20px; }
+
+
+		/* HAMBURGER ICON */
+
+		.menu-nav-icon{ display: inline-block; font-size: 30px; line-height: 40px; margin: 10px 0;
+			display: none; cursor: pointer; }
+
+
+		/* DROPDOWN MENU STYLING */
+
+		header .main-menu li.drop-down{ position: relative; text-align: left; }
+
+		header .main-menu li.drop-down > ul.drop-down-menu{ display: none; position: absolute; top: 60px;
+			left: 0; min-width: 180px; box-shadow: 0px 3px 10px rgba(0,0,0,.3); background: #fff; }
+
+		header .main-menu li.drop-down > ul.drop-down-menu li{ display: block; border-top: 1px solid #ddd; }
+
+		header .main-menu li.drop-down > ul.drop-down-menu li > a{ display: block; padding: 17px 20px; }
+
+		header .main-menu li i{margin-left: 10px; }
+
+
+		/* DROPDOWN HOVER */
+
+		header .main-menu li.drop-down a.mouseover + ul.drop-down-menu{ display: block;
+			animation: full-opacity-anim .2s forwards; }
+
+
+		@keyframes full-opacity-anim{
+			0%{ opacity: 0; }
+			100%{ opacity: 1; }
+		}
+
+
+		/* ---------------------------------
+		4. MAIN
+		--------------------------------- */
+
+		.main-section{ height: 100%; position: relative; overflow-y: auto; overflow-y: auto; margin: 0 -7px;  }
+
+		.main-section .grid-sizer{ padding: 7px; width: 20%; }
+
+		.main-section .grid-sizer a{ display: block; }
+
+		/* SCROLLBAR */
+
+		.main-section::-webkit-scrollbar{ width: 10px; }
+
+		.main-section::-webkit-scrollbar-track { background: #EBEBEB;
+			-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1); }
+
+		.main-section::-webkit-scrollbar-thumb { background-color: #32D98B; outline: 1px solid #32D98B; }
+
+
+		/* ---------------------------------
+		5. FOOTER
+		--------------------------------- */
+
+		footer{ position: absolute; bottom: 0; left: 0; right: 0; overflow: hidden; text-align: center; }
+
+		footer .copyright{ font-size: .95em; line-height: 60px; float: left; }
+
+
+		footer .show-thumb-btn{ height: 30px; line-height: 30px; margin: 15px 0; position: relative; }
+
+		footer .show-thumb-btn:after{ content:''; position: absolute; bottom: 3px; top: 3px; left: -2px;
+			right: -2px; z-index: -1; background: #aaa;
+			-webkit-transform-origin: bottom; transform-origin: bottom;
+			-webkit-transform: scaleY(.15); transform: scaleY(.15);
+			-webkit-transition: all .2s ease; transition: all .2s ease; }
+
+		footer .show-thumb-btn:hover{ color: #fff; }
+		footer .show-thumb-btn:hover:after{ background: #333;
+			-webkit-transform: scaleY(1); transform: scaleY(1); }
+
+
+		footer .social-icons{ float: right; }
+
+		footer .social-icons > li > a{ height: 60px; line-height: 60px; margin-left: 20px; }
+
+		/* Screens Resolution : 992px
+		-------------------------------------------------------------------------- */
+		@media only screen and (max-width: 1200px) {
+
+			/* ---------------------------------
+			4. MAIN
+			--------------------------------- */
+
+			.main-section .grid-sizer{ width: 25%; }
+
+
+			/* SCROLLBAR */
+
+			.main-section::-webkit-scrollbar{ width: 10px; }
+
+			.main-section::-webkit-scrollbar-track { background: #EBEBEB;
+				-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1); }
+
+			.main-section::-webkit-scrollbar-thumb { background-color: #32D98B; outline: 1px solid #32D98B; }
+
+
+		}
+
+		/* Screens Resolution : 992px
+		-------------------------------------------------------------------------- */
+		@media only screen and (max-width: 992px) {
+
+			/* ---------------------------------
+			1. PRIMARY STYLES
+			--------------------------------- */
+
+			h1{ font-size: 3em; line-height: 1; }
+			h2{ font-size: 2em; line-height: 1; }
+			h3{ font-size: 1.5em; }
+			h4{ font-size: 1.2em; }
+			h5{ font-size: .9em; }
+			h6{ font-size: .85em; letter-spacing: 0px; }
+
+
+			/* ---------------------------------
+			3. HEADER
+			--------------------------------- */
+
+			header ul.main-menu > li > a{ padding: 0 5px; }
+
+
+			/* ---------------------------------
+			4. MAIN
+			--------------------------------- */
+
+			.main-section .grid-sizer{ width: 33.3333%; }
+
+
+		}
+
+		/* Screens Resolution : 767px
+		-------------------------------------------------------------------------- */
+		@media only screen and (max-width: 767px) {
+
+			/* ---------------------------------
+			1. PRIMARY STYLES
+			--------------------------------- */
+
+			p{ line-height: 1.4; }
+
+			h1{ font-size: 3em; }
+			h2{ font-size: 1.8em;}
+			h3{ font-size: 1.2em; }
+
+
+			/* ---------------------------------
+			3. HEADER
+			--------------------------------- */
+
+			/* MAIN MENU */
+
+			header .main-menu{ display: none; position: absolute; top: 60px; left: 0; right: 0; float: none;
+				opacity: 0; z-index: 1; height: auto; text-align: left; background: #fff; }
+
+			header .main-menu.visible-menu{ display: block; box-shadow: 0 4px 20px -10px rgba(0,0,0,.4);
+				animation: full-opacity-anim .2s forwards ease; }
+
+			@keyframes full-opacity-anim{
+
+				100%{ opacity: 1; }
+			}
+
+			header .main-menu > li{ display: block; }
+
+			header ul.main-menu > li > a{ display: block; height: auto; line-height: 1; padding: 15px;
+				border-top: 1px solid #eee; }
+
+
+			/* HAMBURGER ICON */
+
+			.menu-nav-icon{ display: block; }
+
+
+			/* DROPDOWN  */
+
+			header .main-menu li.drop-down > ul.drop-down-menu{ position: static; box-shadow: none; }
+
+			header .main-menu li.drop-down > ul.drop-down-menu li{ border-top: 1px solid #eee; }
+			header .main-menu li.drop-down > ul.drop-down-inner li:first-child{ border-top: 1px solid #ddd; }
+
+			/* DROPDOWN HOVER */
+
+			header .main-menu li.drop-down > ul.drop-down-menu li a{ padding-left: 25px; }
+
+			header .main-menu li.drop-down > ul.drop-down-inner li a{ padding-left: 35px; }
+
+
+
+			/* ---------------------------------
+			4. MAIN
+			--------------------------------- */
+
+			.main-section .grid-sizer{ width: 50%; }
+
+			/* SCROLLBAR */
+
+			.main-section::-webkit-scrollbar{ width: 6px; }
+
+			.main-section::-webkit-scrollbar-track { background: #EBEBEB;
+				-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1); }
+
+			.main-section::-webkit-scrollbar-thumb { background-color: #32D98B; outline: 1px solid #32D98B; }
+
+
+
+			/* ---------------------------------
+			5. FOOTER
+			--------------------------------- */
+
+			footer{ text-align: left; }
+
+			footer .copyright{ display: none; }
+
+			footer .social-icons > li > a{ margin-left: 10px; }
+
+
+		}
+
+		/* Screens Resolution : 575px
+		-------------------------------------------------------------------------- */
+		@media only screen and (max-width: 600px) {
+
+			/* ---------------------------------
+			1. PRIMARY STYLES
+			--------------------------------- */
+
+			body{ font-size: 14px; margin: 0; padding: 60px 0; height: 100%; width: 100%; }
+
+
+
+			/* ---------------------------------
+			3. HEADER
+			--------------------------------- */
+
+			header{ padding: 0 15px; }
+
+			header .right-area{ display: none; }
+
+			header ul.main-menu > li > a{ padding: 15px; }
+
+
+			/* HAMBURGER ICON */
+
+			.menu-nav-icon{ float: right; }
+
+
+
+			/* ---------------------------------
+			5. FOOTER
+			--------------------------------- */
+
+			footer{ padding: 0 15px; }
+
+			footer .social-icons > li > a{ margin-left: 5px; }
+
+		}
+
+		/* Screens Resolution : 575px
+		-------------------------------------------------------------------------- */
+		@media only screen and (max-width: 575px) {
+
+
+
+		}
+
+		/* Screens Resolution : 479px
+		-------------------------------------------------------------------------- */
+		@media only screen and (max-width: 479px) {
+
+			/* ---------------------------------
+			4. MAIN
+			--------------------------------- */
+
+			.main-section .grid-sizer{ width: 100%; }
+		}
+
+		/* Screens Resolution : 359px
+		-------------------------------------------------------------------------- */
+		@media only screen and (max-width: 359px) {
+
+			/* ---------------------------------
+			3. HEADER
+			--------------------------------- */
+
+			header .heading-wrapper{  padding: 30px 20px 20px; }
+
+			header .info .icon{ font-size: 25px; }
+
+			header .info .right-area{ margin-left: 35px; }
+
+		}
+
+		/* Screens Resolution : 290px
+		-------------------------------------------------------------------------- */
+		@media only screen and (max-width: 290px) {
+
+			/* ---------------------------------
+			10. FOOTER
+			--------------------------------- */
+
+			footer{ padding: 0 10px; }
+
+		}
+
+		/* Screens Resolution : 290px
+		-------------------------------------------------------------------------- */
+		@media only screen and (max-width: 260px) {
+
+
+
+		}
+
+    /*
+     *  Photopile image gallery base styles
+     *
+     *  Auth: Brian W. Howell
+     *  Date: 25 April 2014
+     *
+     */
+
+    /*-----------------------------------------------------------------------------
+     *  THUMBNAIL SCALING
+     *  As window size gets smaller, reduce the maximum thumbnail width.
+     *  By doing so we can maintain the photopile effect for all screen resolutions.
+     *  It is highly likely that you'll want to customize these values based on
+     *  your personal preferences and the size of your thumbnails.
+     *----------------------------------------------------------------------------*/
+
+    @media (max-width: 320px)                         { ul.photopile li a { max-width:  85px; }}
+    @media (min-width: 321px) and (max-width: 568px)  { ul.photopile li a { max-width: 100px; }}
+    @media (min-width: 569px) and (max-width: 768px)  { ul.photopile li a { max-width: 115px; }}
+    @media (min-width: 769px) and (max-width: 1024px) { ul.photopile li a { max-width: 125px; }}
+    @media (min-width: 1025px)                        { ul.photopile li a { max-width: 150px; }}
+
+    /*-----------------------------------------------------------------------------
+     *  Minimum height of the photopile's container div.
+     *  This is a placeholder for the gallery while it loads which reduces
+     *  shuffling around of elements before the gallery has rendered.
+     *----------------------------------------------------------------------------*/
+
+    .js div.photopile-wrapper {
+        min-height : 500px;
+    }
+
+    /*-----------------------------------------------------------------------------
+     *  Make sure path to navigation sprite is correct
+     *----------------------------------------------------------------------------*/
+
+    div#photopile-nav-next,
+    div#photopile-nav-next:hover,
+    div#photopile-nav-prev,
+    div#photopile-nav-prev:hover {
+        background-image: url('../images/nav-sprites.png');
+    }
+
+    /*----- end customization -----*/
+
+    /* Prevent FOUC */
+    .js ul.photopile {
+        display: none;
+    }
+
+    /* Thumbnails */
+    ul.photopile {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    ul.photopile li {
+        display: inline-block;
+        position: relative;
+        margin: 2px;
+        padding: 0;
+        -webkit-backface-visibility: hidden;
+    }
+    ul.photopile li a {
+        display: block;
+        padding: 2px;
+        outline: none;
+        text-decoration: none;
+        border: 1px solid #6F6F6F;
+        box-shadow: 0 0 20px #3D3D3D;
+    }
+    ul.photopile li.photopile-active-thumbnail:hover,
+    ul.photopile li.photopile-active-thumbnail a:hover {
+        cursor: default;
+    }
+    ul.photopile li a img {
+        display: block;
+        margin: 0;
+        padding: 0;
+        border: 1px solid #6F6F6F;
+        width: 100%;
+        height: auto;
+        -moz-box-sizing:border-box;
+        -webkit-box-sizing:border-box;
+        box-sizing:border-box;
+    }
+
+    /* Photo container */
+    div#photopile-active-image-container {
+        border: 1px solid #6F6F6F;
+        box-shadow: 0 20px 80px black;
+        -moz-box-sizing:border-box;
+        -webkit-box-sizing:border-box;
+        box-sizing:border-box;
+    }
+    div#photopile-active-image-container img {
+        margin: 0 auto;
+        height: auto;
+    }
+    div#photopile-active-image-info {
+        position: relative;
+        width: 100%;
+        background: rgba(0,0,0,0.3);
+    }
+    div#photopile-active-image-info p {
+        color: white;
+        font-size: 12px;
+        margin: 0;
+        padding: 3px 8px;
+    }
+
+    /* Navigator */
+    div#photopile-nav-next,
+    div#photopile-nav-prev {
+        opacity: 0;
+        position: absolute;
+        top: 50%;
+        width: 30px;
+        height: 40px;
+        margin-top: -20px;
+        cursor: pointer;
+    }
+    div#photopile-nav-next {
+        right: 0;
+        margin-right: -35px;
+        background-position: -50px 0;
+    }
+    div#photopile-nav-next:hover {
+        background-position: -50px -50px;
+    }
+    div#photopile-nav-prev {
+        left: 0;
+        right: 0;
+        margin-left: -35px;
+        background-position: 0 0;
+    }
+    div#photopile-nav-prev:hover {
+        background-position: 0 -50px;
+    }
+
+    .spc-wrapper {
+        max-width: 700px;
+        margin: 70px auto;
+    }
+
+
+	</style>
+
+</head>
+<body>
+  <div class="photopile-wrapper" id="app">
+    <ul class="photopile">
+      <li v-for="(image, index) in image_list" :key="image" @contextmenu.prevent="toggleSelect(index, $event)">
+        <a :href="'https://gacon1.gacontamnang.com/raw-images/levinh_kimanh/' + image" target="_blank">
+          <div class="relative">
+            <img
+              :src="'https://gacon1.gacontamnang.com/images/levinh_kimanh/' + image"
+              alt=""
+              class="transition duration-200"
+              :class="{'blur-sm opacity-70': selectedIndexes.includes(index)}"
+            />
+            <div
+              v-if="selectedIndexes.includes(index)"
+              class="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-xl font-bold rounded"
+            >
+              {{ selectedIndexes.indexOf(index) + 1 }}
+            </div>
+          </div>
+        </a>
+      </li>
+    </ul>
+
+    <!-- Thanh hiển thị khi có ảnh được chọn -->
+    <div
+      v-if="selectedIndexes.length"
+      class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md rounded-lg shadow-lg px-4 py-2 flex items-center gap-4"
+    >
+      <span class="font-semibold text-gray-700">Đã chọn {{ selectedIndexes.length }} ảnh</span>
+      <button @click="downloadSelectedZip" class="bg-pink-500 hover:bg-pink-600 text-white px-3 py-1 rounded-lg shadow">
+        📦 Tải file ZIP
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="static/js/photopile.js"></script>
+
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          image_list: [],
+          selectedIndexes: [],
+          lastSelectedIndex: null,
+          downloading: false
+        };
+      },
+      mounted() {
+        fetch("https://gacon1.gacontamnang.com/images/levinh_kimanh")
+          .then(res => res.json())
+          .then(res => {
+            this.image_list = res["files"];
+          });
+      },
+      methods: {
+        toggleSelect(index, event) {
+          if (event.shiftKey && this.lastSelectedIndex !== null) {
+            const [start, end] = [this.lastSelectedIndex, index].sort((a, b) => a - b);
+            for (let i = start; i <= end; i++) {
+              if (!this.selectedIndexes.includes(i)) this.selectedIndexes.push(i);
+            }
+          } else {
+            const pos = this.selectedIndexes.indexOf(index);
+            if (pos >= 0) this.selectedIndexes.splice(pos, 1);
+            else this.selectedIndexes.push(index);
+            this.lastSelectedIndex = index;
+          }
+        },
+
+        async downloadSelectedZip() {
+          if (this.selectedIndexes.length === 0) return;
+          this.downloading = true;
+
+          const zip = new JSZip();
+          const folder = zip.folder("levinh_kimanh");
+          let count = 0;
+
+          for (const idx of this.selectedIndexes) {
+            const filename = this.image_list[idx];
+            const url = `https://gacon1.gacontamnang.com/raw-images/levinh_kimanh/${filename}`;
+            try {
+              const res = await fetch(url);
+              const blob = await res.blob();
+              folder.file(filename, blob);
+              count++;
+            } catch (err) {
+              console.error("Error fetching", filename, err);
+            }
+          }
+
+          // Tạo file ZIP và tải
+          const content = await zip.generateAsync({ type: "blob" });
+          saveAs(content, `levinh_kimanh_selected_${Date.now()}.zip`);
+          this.downloading = false;
+        }
+      }
+    });
+
+    app.mount("#app");
+  </script>
+
+  <style>
+    .relative {
+      position: relative;
+      display: inline-block;
+    }
+    .absolute {
+      position: absolute;
+    }
+  </style>
+</body>
+</html>

@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Photo Booth - HTML Scenes (Font Awesome + Tailwind + Vue)</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pinky: '#ef7181',
+            soft: '#f6f6f6'
+          },
+          fontFamily: {
+            display: ['"Poppins"', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- Swiper -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <style>
+    html,body,#app { height: 100%; }
+    body { font-family: Poppins, system-ui; }
+    * {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;     /* Firefox */
+    }
+
+    *::-webkit-scrollbar {
+      display: none; /* Chrome, Safari */
+    }
+    .scene-img {
+      background: linear-gradient(120deg, #ffdfe8 0%, #ffe9f2 50%, #fff 100%);
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .camera-preview {
+      background: linear-gradient(180deg, #222 0%, #111 100%);
+      border-radius: 8px;
+      width: 92%;
+      height: 70%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .filter-bar { height:64px; display:flex; align-items:center; gap:8px; padding:8px; overflow:auto; }
+    .filter-pill { min-width:72px; padding:10px; border-radius:999px; background:#fff; text-align:center; font-weight:500; }
+    .round-btn { border-radius:999px; padding:18px; display:inline-flex; align-items:center; justify-content:center; font-size:1.8rem; }
+    .ghost { background: rgba(0,0,0,0.05); }
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+      /* Flash effect when taking picture */
+    .flash {
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      animation: flashAnim 0.4s ease;
+    }
+    @keyframes flashAnim {
+      0% { opacity: 0; }
+      30% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Small captured image animation */
+    .capture-thumb {
+      position: absolute;
+      bottom: 40px;
+      right: 40px;
+      width: 160px;
+      height: 120px;
+      border: 4px solid white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      animation: zoomFade 1s ease forwards;
+    }
+    @keyframes zoomFade {
+      0% { transform: scale(0.2); opacity: 0; }
+      40% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0; }
+    }
+  </style>
+</head>
+<body class="bg-white">
+
+<div id="app" class="h-screen w-screen">
+  <div class="swiper h-full">
+    <div class="swiper-wrapper">
+
+      <!-- Slide 1: Home -->
+      <section class="swiper-slide flex flex-col items-center justify-center gap-8 p-8">
+        <div class="text-center">
+          <h1 class="text-5xl font-semibold mb-2">Hello, I'm the <span class="px-2 py-1 rounded-md bg-pinky/10 text-pinky font-bold">Gacontamnang</span> Photo Booth</h1>
+        </div>
+        <div class="flex gap-12 mt-6">
+          <div @click="nextSlide" class="flex flex-col items-center gap-3 cursor-pointer">
+            <div class="round-btn bg-pinky text-white w-28 h-28"><i class="fa-solid fa-camera"></i></div>
+            <div class="text-sm text-gray-600">Start</div>
+          </div>
+          <div @click="openSettings" class="flex flex-col items-center gap-3 cursor-pointer">
+            <div class="round-btn ghost w-28 h-28"><i class="fa-solid fa-gear"></i></div>
+            <div class="text-sm text-gray-600">Settings</div>
+          </div>
+          <div @click="openHelper" class="flex flex-col items-center gap-3 cursor-pointer">
+            <div class="round-btn ghost w-28 h-28"><i class="fa-solid fa-circle-question"></i></div>
+            <div class="text-sm text-gray-600">Help</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="swiper-slide flex flex-col items-center justify-center gap-8 p-8">
+        <h1 class="text-5xl font-semibold text-pinky">Notice</h1>
+        <div class="text-center text-gray-700 max-w-3xl">
+          <h1 class="text-3xl mt-4 leading-relaxed">
+            Chúng ta sẽ có
+            <span class="px-2 py-1 rounded-md bg-pinky/10 text-pinky font-bold">6 lượt chụp</span>,
+            mỗi lượt là
+            <span class="px-2 py-1 rounded-md bg-pinky/10 text-pinky font-bold">20 giây</span>
+            <br/>
+            Tạo dáng để được những bức ảnh thật đẹp nào!
+          </h1>
+        </div>
+
+        <!-- Countdown Clock -->
+        <div class="flex flex-col items-center justify-center mt-10">
+          <div class="relative w-48 h-48 rounded-full bg-white shadow-2xl flex items-center justify-center">
+            <svg class="absolute w-full h-full transform -rotate-90">
+              <circle cx="96" cy="96" r="88" stroke="#ffe4ec" stroke-width="12" fill="none" />
+              <circle
+                cx="96" cy="96" r="88"
+                :stroke-dasharray="circumference"
+                :stroke-dashoffset="dashOffset"
+                stroke="#ff6b9a"
+                stroke-width="12"
+                fill="none"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span class="text-6xl font-bold text-pinky">{{ countdown }}</span>
+          </div>
+          <div class="mt-4 text-gray-500 text-lg font-medium">Chuẩn bị sẵn sàng nhé!</div>
+        </div>
+      </section>
+
+      <!-- Slide 3: Timer -->
+      <!-- <section class="swiper-slide flex flex-col items-center justify-center p-8">
+        <h2 class="text-4xl font-semibold mb-4 text-center">Choose your timer</h2>
+        <div class="flex gap-6 mt-8">
+          <button class="px-8 py-4 rounded-full ghost text-gray-700"><i class="fa-solid fa-stopwatch"></i> 3s</button>
+          <button class="px-10 py-4 rounded-full border-2 border-pinky text-pinky font-semibold bg-white"><i class="fa-solid fa-stopwatch"></i> 5s</button>
+          <button class="px-8 py-4 rounded-full ghost text-gray-700"><i class="fa-solid fa-stopwatch"></i> 10s</button>
+        </div>
+      </section> -->
+
+      <section class="swiper-slide relative flex items-center justify-center bg-black">
+        <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
+        <video id="camera1" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
+        <!-- <img id="video" class="absolute inset-0 w-full h-full object-cover" :src="videoSrc" alt="Live video stream"> -->
+        <div v-if="isFlashing" class="flash"></div>
+        <div class="absolute top-6 left-6 text-white text-xl font-bold bg-black/30 px-4 py-2 rounded-lg shadow-md">
+          1 / 6
+        </div>
+        <div v-if="countdown > 0" class="absolute text-white text-[200px] font-extrabold drop-shadow-xl border-0 border-pink-300 rounded-full w-[300px] h-[300px] flex items-center justify-center bg-white/10">
+          <span class="text-pinky">{{ countdown }}</span>
+        </div>
+        <img v-if="showThumb" src="http://localhost:8000/static/images/capture.png" alt="capture" class="capture-thumb" />
+      </section>
+
+      <section class="swiper-slide relative flex items-center justify-center bg-black">
+        <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
+        <video id="camera2" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
+        <!-- <img id="video" class="absolute inset-0 w-full h-full object-cover" :src="videoSrc" alt="Live video stream"> -->
+        <div v-if="isFlashing" class="flash"></div>
+        <div class="absolute top-6 left-6 text-white text-xl font-bold bg-black/30 px-4 py-2 rounded-lg shadow-md">
+          2 / 6
+        </div>
+        <div v-if="countdown > 0" class="absolute text-white text-[200px] font-extrabold drop-shadow-xl border-0 border-pink-300 rounded-full w-[300px] h-[300px] flex items-center justify-center bg-white/10">
+          <span class="text-pinky">{{ countdown }}</span>
+        </div>
+        <img v-if="showThumb" src="http://localhost:8000/static/images/capture.png" alt="capture" class="capture-thumb" />
+      </section>
+
+      <section class="swiper-slide relative flex items-center justify-center bg-black">
+        <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
+        <video id="camera3" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
+        <!-- <img id="video" class="absolute inset-0 w-full h-full object-cover" :src="videoSrc" alt="Live video stream"> -->
+        <div v-if="isFlashing" class="flash"></div>
+        <div class="absolute top-6 left-6 text-white text-xl font-bold bg-black/30 px-4 py-2 rounded-lg shadow-md">
+          3 / 6
+        </div>
+        <div v-if="countdown > 0" class="absolute text-white text-[200px] font-extrabold drop-shadow-xl border-0 border-pink-300 rounded-full w-[300px] h-[300px] flex items-center justify-center bg-white/10">
+          <span class="text-pinky">{{ countdown }}</span>
+        </div>
+        <img v-if="showThumb" src="http://localhost:8000/static/images/capture.png" alt="capture" class="capture-thumb" />
+      </section>
+
+      <section class="swiper-slide relative flex items-center justify-center bg-black">
+        <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
+        <video id="camera4" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
+        <!-- <img id="video" class="absolute inset-0 w-full h-full object-cover" :src="videoSrc" alt="Live video stream"> -->
+        <div v-if="isFlashing" class="flash"></div>
+        <div class="absolute top-6 left-6 text-white text-xl font-bold bg-black/30 px-4 py-2 rounded-lg shadow-md">
+          4 / 6
+        </div>
+        <div v-if="countdown > 0" class="absolute text-white text-[200px] font-extrabold drop-shadow-xl border-0 border-pink-300 rounded-full w-[300px] h-[300px] flex items-center justify-center bg-white/10">
+          <span class="text-pinky">{{ countdown }}</span>
+        </div>
+        <img v-if="showThumb" src="http://localhost:8000/static/images/capture.png" alt="capture" class="capture-thumb" />
+      </section>
+
+      <section class="swiper-slide relative flex items-center justify-center bg-black">
+        <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
+        <video id="camera5" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
+        <!-- <img id="video" class="absolute inset-0 w-full h-full object-cover" :src="videoSrc" alt="Live video stream"> -->
+        <div v-if="isFlashing" class="flash"></div>
+        <div class="absolute top-6 left-6 text-white text-xl font-bold bg-black/30 px-4 py-2 rounded-lg shadow-md">
+          5 / 6
+        </div>
+        <div v-if="countdown > 0" class="absolute text-white text-[200px] font-extrabold drop-shadow-xl border-0 border-pink-300 rounded-full w-[300px] h-[300px] flex items-center justify-center bg-white/10">
+          <span class="text-pinky">{{ countdown }}</span>
+        </div>
+        <img v-if="showThumb" src="http://localhost:8000/static/images/capture.png" alt="capture" class="capture-thumb" />
+      </section>
+
+      <section class="swiper-slide relative flex items-center justify-center bg-black">
+        <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
+        <video id="camera6" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
+        <!-- <img id="video" class="absolute inset-0 w-full h-full object-cover" :src="videoSrc" alt="Live video stream"> -->
+        <div v-if="isFlashing" class="flash"></div>
+        <div class="absolute top-6 left-6 text-white text-xl font-bold bg-black/30 px-4 py-2 rounded-lg shadow-md">
+          6 / 6
+        </div>
+        <div v-if="countdown > 0" class="absolute text-white text-[200px] font-extrabold drop-shadow-xl border-0 border-pink-300 rounded-full w-[300px] h-[300px] flex items-center justify-center bg-white/10">
+          <span class="text-pinky">{{ countdown }}</span>
+        </div>
+        <img v-if="showThumb" src="http://localhost:8000/static/images/capture.png" alt="capture" class="capture-thumb" />
+      </section>
+
+      <!-- Slide 4: Camera -->
+      <!-- <section class="swiper-slide flex flex-col items-center justify-start p-6">
+        <div class="w-full flex justify-between items-center px-6">
+          <div class="text-sm text-gray-500">1 of 3</div>
+          <button class="px-3 py-2 rounded-full ghost"><i class="fa-solid fa-xmark"></i> Exit</button>
+        </div>
+        <div class="flex-1 w-full flex items-center justify-center px-6">
+          <div class="w-[82%] h-[70%] relative">
+            <div class="camera-preview">
+              <div class="absolute top-4 left-4 bg-white/20 py-1 px-3 rounded-md text-xs"><i class="fa-solid fa-circle text-red-500"></i> Live</div>
+              <i class="fa-solid fa-user text-6xl opacity-50"></i>
+            </div>
+            <div class="absolute right-[-84px] top-8 flex flex-col gap-4">
+              <button class="w-20 h-20 rounded-full bg-white shadow flex items-center justify-center"><i class="fa-solid fa-xmark text-2xl"></i></button>
+              <button class="w-20 h-20 rounded-full bg-green-500 text-white shadow flex items-center justify-center"><i class="fa-solid fa-check text-2xl"></i></button>
+              <button class="w-20 h-20 rounded-full bg-red-100 text-red-600 shadow flex items-center justify-center"><i class="fa-solid fa-trash text-2xl"></i></button>
+            </div>
+            <div class="absolute bottom-[-64px] left-0 w-full filter-bar">
+              <div class="filter-pill">None</div>
+              <div class="filter-pill">Moon</div>
+              <div class="filter-pill">Sun</div>
+              <div class="filter-pill bg-amber-50 border-2 border-pinky/60">Dream</div>
+              <div class="filter-pill">Desert</div>
+              <div class="filter-pill">Mint</div>
+            </div>
+          </div>
+        </div>
+      </section> -->
+
+      <section
+        class="swiper-slide flex flex-col items-center justify-between p-4 relative bg-gray-50"
+        id="process-slide"
+      >
+        <!-- TOP BAR: Raw Images -->
+        <div class="w-full flex overflow-x-auto space-x-4 pb-2 hide-scrollbar" id="top-bar">
+          <div
+            v-for="(img, index) in raw_image_paths"
+            :key="index"
+            @click="selectTopImage(index)"
+            class="flex-shrink-0 w-24 h-24 rounded-lg border-2 cursor-pointer overflow-hidden hover:scale-105 transition-all"
+            :class="selectedTopImage === index ? 'border-pink-400' : 'border-transparent'"
+          >
+            <img :src="'http://localhost:8000/images/' + config.topic + '/' + img" class="w-full h-full object-cover" />
+          </div>
+        </div>
+
+        <!-- MAIN AREA -->
+        <div class="flex flex-1 w-full items-center justify-center relative mt-2">
+          <!-- LEFT BAR: Layout positions -->
+          <!-- <div class="flex flex-col space-y-4 mr-6">
+            <div
+              v-for="(slot, i) in layoutSlots"
+              :key="i"
+              class="w-20 h-20 border-2 rounded-lg flex items-center justify-center cursor-pointer relative bg-gray-100 hover:border-pink-300"
+              :class="selectedSlot === i ? 'border-pink-500' : 'border-gray-300'"
+              @click="assignImageToSlot(i)"
+            >
+              <img
+                v-if="selectedImages[i]"
+                :src="'http://localhost:8000/images/' + config.topic + '/' + selectedImages[i]"
+                class="w-full h-full object-cover rounded-md"
+              />
+              <span v-else class="text-gray-400 text-sm">+</span>
+            </div>
+          </div> -->
+
+          <div class="flex flex-col space-y-4 mr-6">
+            <div
+              v-for="(slot, i) in layoutSlots"
+              :key="i"
+              class="w-20 h-20 border-2 rounded-lg flex items-center justify-center cursor-pointer relative bg-gray-100 hover:border-pink-300"
+              :class="selectedSlot === i ? 'border-pink-500' : 'border-gray-300'"
+              @click="selectSlot(i)"
+            >
+              <img
+                v-if="selectedImages[i]"
+                :src="'http://localhost:8000/images/' + config.topic + '/' + selectedImages[i]"
+                class="w-full h-full object-cover rounded-md"
+              />
+              <span v-else class="text-gray-400 text-sm">+</span>
+
+              <!-- Show filter name for each slot -->
+              <div
+                v-if="slotFilters[i]"
+                class="absolute bottom-0 left-0 w-full text-[10px] text-center bg-black/40 text-white py-0.5 rounded-b-md"
+              >
+                {{ slotFilters[i] }}
+              </div>
+            </div>
+          </div>
+
+          <!-- CENTER: Processed Image -->
+          <div class="flex-1 flex items-center justify-center">
+            <div class="relative w-[35%] max-w-[640px] aspect-[4/6] bg-white rounded-xl shadow-lg overflow-hidden">
+              <div
+                v-if="loading"
+                class="absolute inset-0 flex items-center justify-center bg-white/70 z-10"
+              >
+                <div class="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <img
+                v-if="processedImage"
+                :src="processedImage"
+                class="w-full h-full object-contain"
+              />
+              <div
+                v-else
+                class="flex flex-col items-center justify-center h-full text-gray-400"
+              >
+                <i class="fa-solid fa-image text-4xl mb-2"></i>
+                <span>Preview will appear here</span>
+              </div>
+            </div>
+
+            <div
+              v-if="countdown > 0"
+              class="absolute text-8xl font-bold text-pink-500/80 drop-shadow-lg select-none"
+            >
+              {{ countdown }}
+            </div>
+          </div>
+
+          <!-- RIGHT BAR: Filters -->
+          <!-- <div class="flex flex-col space-y-3 ml-6 overflow-y-auto h-[60vh] hide-scrollbar">
+            <div
+              v-for="(filter, index) in filters"
+              :key="index"
+              @click="selectFilter(filter)"
+              class="px-3 py-2 rounded-md cursor-pointer bg-gray-100 hover:bg-pink-100 text-sm text-gray-700"
+              :class="selectedFilter === filter ? 'bg-pink-300 text-white' : ''"
+            >
+              {{ filter }}
+            </div>
+          </div>
+        </div> -->
+
+        <div class="flex flex-col space-y-3 ml-6 overflow-y-auto h-[60vh] hide-scrollbar">
+          <div
+            v-for="(filter, index) in filters"
+            :key="index"
+            @click="selectFilterForSlot(filter)"
+            class="px-3 py-2 rounded-md cursor-pointer bg-gray-100 hover:bg-pink-100 text-sm text-gray-700"
+            :class="selectedSlotFilter === filter ? 'bg-pink-300 text-white' : ''"
+          >
+            {{ filter }}
+          </div>
+        </div>
+        </div>
+
+        <!-- BOTTOM BAR: Layouts -->
+        <div class="w-full flex overflow-x-auto space-x-4 mt-4 pb-2 hide-scrollbar" id="bottom_bar">
+          <div
+            v-for="(frame, index) in frames"
+            :key="frame.id"
+            @click="selectLayout(frame)"
+            class="flex-shrink-0 w-24 h-24 border-2 rounded-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-all"
+            :class="selectedLayout?.id === frame.id ? 'border-pink-500' : 'border-transparent'"
+          >
+            <img
+              :src="'http://localhost:8000/frames/' + config.topic + '/' + frame.id"
+              class="w-full h-full object-cover rounded-md"
+            />
+          </div>
+        </div>
+
+        <div class="absolute bottom-20 right-10">
+          <button
+            @click="acceptAndNext()"
+            class="bg-pink-500 text-white px-6 py-3 rounded-full shadow hover:bg-pink-600 transition"
+          >
+            Accept
+          </button>
+        </div>
+      </section>
+
+
+      <!-- Slide 8: Exit -->
+      <section class="swiper-slide flex items-center justify-center p-8">
+        <div class="bg-white p-10 rounded-3xl shadow-xl max-w-2xl text-center">
+          <h3 class="text-3xl font-semibold mb-6"><i class="fa-solid fa-circle-exclamation text-red-500 mr-2"></i>Bạn có muốn lưu lại ảnh và in ảnh không?</h3>
+          <div class="flex gap-6 justify-center">
+            <button class="px-8 py-3 rounded-full ghost border" @click="goHome()"><i class="fa-solid fa-circle-xmark"></i> Khong</button>
+            <button class="px-8 py-3 rounded-full bg-pinky-100 text-red-600 border border-pinky-300" @click="nextSlide()"><i class="fa-solid fa-right-from-bracket"></i> Co</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 6: Collage -->
+      <section class="swiper-slide flex flex-col items-center justify-center p-8">
+        <div class="text-xl text-gray-700 flex items-center gap-3">
+          <span class="w-12 h-12 rounded-full border-2 border-pinky flex items-center justify-center"><i class="fa-solid fa-images text-pinky"></i></span>
+          <div class="text-3xl font-semibold">Your collage is being processed...</div>
+        </div>
+        <!-- <div class="w-[60%] mt-10 scene-img p-6">
+          <div class="w-full h-64 bg-white/60 rounded-md flex items-center justify-center opacity-60">
+            <i class="fa-solid fa-spinner fa-spin text-3xl text-pinky"></i>
+          </div>
+        </div> -->
+        <div class="relative w-[35%] max-w-[640px] aspect-[4/6] bg-white rounded-xl shadow-lg overflow-hidden">
+          <div
+            v-if="loading"
+            class="absolute inset-0 flex items-center justify-center bg-white/70 z-10"
+          >
+            <div class="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <img
+            v-if="processedImage"
+            :src="processedImage"
+            class="w-full h-full object-contain"
+          />
+        </div>
+      </section>
+
+      <!-- Slide 7: Printing -->
+      <section class="swiper-slide flex flex-col items-center justify-center p-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full border-2 border-pinky flex items-center justify-center"><i class="fa-solid fa-print text-pinky"></i></div>
+          <h2 class="text-4xl font-semibold">Printing...</h2>
+        </div>
+        <div class="w-[60%] mt-8 scene-img p-8">
+          <div class="w-full h-56 rounded-md flex flex-col items-center justify-center">
+            <img
+              v-if="processedImage"
+              :src="processedImage"
+              class="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <div v-if="showModal" class="fixed inset-0 flex items-center justify-center bg-black/50 overflow-auto z-50">
+      <div class="bg-white rounded-2xl p-6 w-[850px] max-h-[90vh] overflow-y-auto shadow-2xl relative">
+        <h2 class="text-3xl font-bold text-gray-700 mb-6 text-center">System Control Panel</h2>
+
+        <div v-if="loading" class="flex flex-col items-center justify-center py-10">
+          <div class="w-12 h-12 border-4 border-pinky border-t-transparent rounded-full animate-spin"></div>
+          <p class="mt-3 text-gray-500">Loading configuration...</p>
+        </div>
+
+        <div class="flex border-b mb-4 text-gray-600">
+          <button
+            v-for="tab in ['General', 'Printer', 'Camera', 'Network', 'Commands', 'Upload Frame']"
+            :key="tab"
+            @click="activeTab = tab"
+            :class="['px-4 py-2 -mb-px font-semibold border-b-2 transition-all',
+              activeTab===tab ? 'border-pinky text-pinky' : 'border-transparent hover:text-pinky/70']">
+            {{ tab }}
+          </button>
+        </div>
+
+        <div v-if="activeTab === 'General'" class="animate-fadeIn">
+          <h3 class="text-xl font-semibold mb-3 text-pinky">General Configuration</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label>Operating System</label><input v-model="config.operating_system" class="w-full border rounded-md p-2"/></div>
+            <div><label>Domain</label><input v-model="config.domain" class="w-full border rounded-md p-2"/></div>
+            <div><label>Topic</label><input v-model="config.topic" class="w-full border rounded-md p-2"/></div>
+            <div><label>Collection Name</label><input v-model="config.collection_name" class="w-full border rounded-md p-2"/></div>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'Printer'" class="animate-fadeIn">
+          <h3 class="text-xl font-semibold mb-3 text-pinky flex items-center gap-2">
+            Printer Settings
+          </h3>
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div><label>Printer Name</label><input v-model="config.printer.name" class="w-full border rounded-md p-2"/></div>
+            <div><label>Printer Code</label><input v-model="config.printer.code" class="w-full border rounded-md p-2"/></div>
+          </div>
+          <div class="flex items-center justify-center gap-6 mt-6">
+            <div class="flex flex-col items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" :class="printerClass" class="w-20 h-20">
+                <path d="M19 8H5V4h14v4zM19 10H5c-1.1 0-2 .9-2 2v5h4v3h10v-3h4v-5c0-1.1-.9-2-2-2zm-5 8H10v-3h4v3z"/>
+              </svg>
+              <span class="font-semibold mt-2 text-gray-700">Printer: {{ stat.printer_stat }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'Camera'" class="animate-fadeIn">
+          <h3 class="text-xl font-semibold mb-3 text-pinky flex items-center gap-2">
+            Camera Settings
+          </h3>
+          <div class="grid grid-cols-3 gap-4 mb-4">
+            <div><label>Camera Name</label><input v-model="config.camera.name" class="w-full border rounded-md p-2"/></div>
+            <div><label>Camera Code</label><input v-model="config.camera.code" class="w-full border rounded-md p-2"/></div>
+            <div><label>Stream ID</label><input v-model.number="config.camera.streaming_camera_id" type="number" class="w-full border rounded-md p-2"/></div>
+          </div>
+          <div class="flex items-center justify-center gap-6 mt-6">
+            <div class="flex flex-col items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" :class="cameraClass" class="w-20 h-20" viewBox="0 0 24 24">
+                <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0
+                1.1.9 2 2 2h16c1.1 0 2-.9
+                2-2V6c0-1.1-.9-2-2-2h-3.17L15
+                2H9zm3 16c-2.76 0-5-2.24-5-5s2.24-5
+                5-5 5 2.24 5 5-2.24 5-5 5z"/>
+              </svg>
+              <span class="font-semibold mt-2 text-gray-700">Camera: {{ stat.camera_stat }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'Network'" class="animate-fadeIn">
+          <h3 class="text-xl font-semibold mb-3 text-pinky flex items-center gap-2">
+            Network Configuration
+          </h3>
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div><label>Wi-Fi SSID</label><input v-model="wifi.ssid" class="w-full border rounded-md p-2"/></div>
+            <div><label>Password</label><input v-model="wifi.password" type="password" class="w-full border rounded-md p-2"/></div>
+          </div>
+          <p class="text-gray-600 italic text-sm mt-2">⚙️ (You’ll add API later to save Wi-Fi & network status.)</p>
+        </div>
+
+        <div v-if="activeTab === 'Commands'" class="animate-fadeIn">
+          <h3 class="text-xl font-semibold mb-3 text-pinky flex items-center gap-2">
+            System Commands
+          </h3>
+          <div>
+            <label>Printer Control Command</label>
+            <textarea v-model="config.commands.printer.win_control_printer_command" class="w-full border rounded-md p-2 h-20"></textarea>
+            <label>Printer Status Command</label>
+            <textarea v-model="config.commands.printer.win_stat_printer_command" class="w-full border rounded-md p-2 h-20"></textarea>
+            <label>Camera Control Command</label>
+            <input v-model="config.commands.camera.win_control_cam_command" class="w-full border rounded-md p-2"/>
+            <label>Camera Status Command</label>
+            <textarea v-model="config.commands.camera.win_stat_cam_command" class="w-full border rounded-md p-2 h-20"></textarea>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'Upload Frame'" class="animate-fadeIn">
+          <h3 class="text-xl font-semibold mb-3 text-pinky flex items-center gap-2">
+            Upload Frame Image
+          </h3>
+          <div class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-10 bg-gray-50">
+            <input type="file" @change="handleFileUpload" class="hidden" ref="fileInput" accept="image/*" />
+            <div v-if="!selectedFile" class="text-center space-y-3">
+              <p class="text-gray-500 text-sm">Choose an image frame to upload.</p>
+              <button @click="$refs.fileInput.click()" class="px-4 py-2 bg-pinky text-white rounded-md hover:bg-pinky/90">
+                Select File
+              </button>
+            </div>
+
+            <div v-else class="flex flex-col items-center space-y-4">
+              <img :src="previewUrl" alt="Preview" class="max-h-60 rounded-lg shadow-md" />
+              <p class="text-gray-700 font-medium">{{ selectedFile.name }}</p>
+              <div class="flex gap-3">
+                <button @click="uploadFrame" :disabled="uploading"
+                  class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50">
+                  <span v-if="!uploading">Upload</span>
+                  <span v-else class="flex items-center gap-2"><div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>Uploading...</span>
+                </button>
+                <button @click="cancelUpload" class="px-4 py-2 border border-gray-400 rounded-md hover:bg-gray-100">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="uploadedFile" class="mt-6 text-center">
+            <p class="text-green-600 font-semibold">✅ Uploaded successfully!</p>
+            <p class="text-gray-500 text-sm">File name: {{ uploadedFile }}</p>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-4 mt-6">
+          <button @click="saveConfig" class="px-4 py-2 bg-pinky text-white rounded-md hover:bg-pinky/90">Save</button>
+          <button @click="showModal=false" class="px-4 py-2 border border-gray-400 rounded-md hover:bg-gray-100">Close</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- navigation -->
+    <!-- <div class="absolute top-6 right-6 z-50">
+      <button id="prevBtn" class="px-3 py-2 rounded-md ghost mr-2"><i class="fa-solid fa-arrow-left"></i></button>
+      <button id="nextBtn" class="px-3 py-2 rounded-md bg-pinky text-white"><i class="fa-solid fa-arrow-right"></i></button>
+    </div> -->
+  </div>
+</div>
+
+<script>
+  const app = Vue.createApp({
+    data() {
+      return {
+        swiper: null,
+        raw_image_paths: [
+          "gacon_20251108014358.jpg",
+          "gacon_20251108014420.jpg",
+          "gacon_20251108014437.jpg",
+          "gacon_20251108014453.jpg",
+          "gacon_20251108014509.jpg",
+          "gacon_20251108014527.jpg"
+        ],
+        processed_image_path: null,
+        showModal: false,
+        activeTab: 'General',
+        tabs: ['General', 'Printer', 'Camera', 'Network', 'Commands'],
+        config: {
+            "operating_system": "Windows",
+            "domain": "https://gacon1.gacontamnang.com/",
+            "topic": "levinh_kimanh",
+            "collection_name": "gacon",
+            "folders": {
+                "root_folder": "C:\\Users\\Administrator\\Documents",
+                "save_folder": "$topic_folder\\images\\",
+                "processed_folder": "$topic_folder\\processed\\",
+                "frame_folder": "$topic_folder\\frames\\"
+            },
+            "printer": {
+                "name": "Canon SELPHY CP1000",
+                "code": "CP1000"
+            },
+            "camera": {
+                "name": "Nikon D3300",
+                "code": "D3300",
+                "streaming_camera_id": 0
+            },
+            "commands": {
+                "printer": {
+                    "win_control_printer_command": [
+                        "rundll32",
+                        "shimgvw.dll,ImageView_PrintTo",
+                        "/pt",
+                        "$image_path",
+                        "$printer_code"
+                    ],
+                    "win_stat_printer_command": [
+                        "powershell",
+                        "-Command",
+                        "Get-Printer | Select Name, PrinterStatus"
+                    ]
+                },
+                "camera": {
+                    "win_control_cam_command": "C:\\Program Files (x86)\\digiCamControl\\CameraControlCmd.exe",
+                    "win_stat_cam_command": [
+                        "powershell",
+                        "-Command",
+                        "Get-PnpDevice | Where-Object { $_.FriendlyName -like '*$camera_code*' } | Select-Object FriendlyName, Status"
+                    ]
+                }
+            }
+        },
+        frames: [
+            {"id": "151ee779000d4f229d8eb7630ff0d6e3.jpg", "slots":2},
+            {"id": "71060f51f3d5493db1ac9c75bae1b8d9.jpg", "slots":2},
+            {"id": "7fa0afdd71394724be68613df540f21e.jpg", "slots":2}
+        ],
+        loading: true,
+        saving: false,
+        wifiStatus: null,
+        stat: { printer_stat: '-', camera_stat: '-' },
+        wifi: { ssid: '', password: '' },
+        apiBase: "http://127.0.0.1:8000",
+        countdown: 0,
+        circumference: 2 * Math.PI * 88,
+        timer: null,
+        isFlashing: false,
+        showThumb: false,
+        videoSrc: "http://127.0.0.1:8000/video_feed",
+        filters: ["None", "Moon", "Sun", "Dream", "Desert", "Mint"],
+        selectedFilter: "None",
+        selectedLayout: {"id": "151ee779000d4f229d8eb7630ff0d6e3.jpg", "slots": 2},
+        layoutSlots: [null, null],
+        selectedSlot: null,
+        slotFilters: [],
+        selectedSlotFilter: null,
+        selectedTopImage: null,
+        selectedImages: [],
+        processedImage: null,
+        uploading: false,
+        selectedFile: null,
+        previewUrl: null,
+        uploadedFile: null,
+        finalProcessImagePath: null,
+      }
+    },
+    mounted() {
+      const swiper = new Swiper('.swiper', {
+        slidesPerView: 1,
+        spaceBetween: 0,
+        speed: 600,
+        allowTouchMove: false,
+      });
+      this.swiper = swiper
+
+      swiper.autoplay.stop();
+
+      swiper.on('slideChange', () => {
+        if (swiper.activeIndex === 1) {
+          this.startCountdown(10);
+          this.raw_image_paths = []
+          this.processed_image_path = null
+        }
+        if (swiper.activeIndex >= 2 & swiper.activeIndex <= 7) {
+          this.startCamera(swiper.activeIndex - 1)
+          this.startPhotoCountdown(5, this.triggerCapture);
+        }
+        if (swiper.activeIndex === 8) {
+          this.startCountdown(120);
+        }
+        if (swiper.activeIndex === 9) {
+
+        }
+        if (swiper.activeIndex === 10) {
+          this.finalProcessImage();
+        }
+        if (swiper.activeIndex === 11) {
+          this.printImage();
+        }
+      });
+
+      this.fetchFrames();
+
+      window.addEventListener("pageshow", (event) => {
+        if (event.persisted) {
+          location.reload();
+        }
+      });
+
+      // swiper.slideTo(8)
+      // document.getElementById('prevBtn').addEventListener('click', () => swiper.slidePrev());
+      // document.getElementById('nextBtn').addEventListener('click', () => swiper.slideNext());
+    },
+    computed: {
+      dashOffset() {
+        // Shrinks the pink circle as countdown decreases
+        return (this.countdown / 10) * this.circumference;
+      },
+      printerClass() {
+        return this.stat.printer_stat === 'OK'
+          ? 'fill-green-400'
+          : 'fill-red-400'
+      },
+      cameraClass() {
+        return this.stat.camera_stat === 'OK'
+          ? 'fill-green-400'
+          : 'fill-red-400'
+      }
+    },
+    methods: {
+      goHome() {
+        this.swiper.slideTo(0)
+      },
+      nextSlide() {
+        this.swiper.slideNext()
+      },
+      async fetchFrames() {
+        const res = await fetch("/frames/" + this.config.topic);
+        this.frames = await res.json()
+        this.frames = this.frames["files"];
+
+        for (let i = 0; i < this.frames.length; i++) {
+          this.frames[i]["slots"] = parseInt(this.frames[i]["slots"])
+        }
+      },
+      async openSettings() {
+        this.loading = true
+        this.showModal = true
+        const [conf, stat] = await Promise.all([
+          axios.get(`${this.apiBase}/config`),
+          axios.get(`${this.apiBase}/stat`)
+        ])
+        this.config = conf.data
+        this.stat = stat.data.data
+        this.loading = false
+      },
+      async openHelper() {
+        const res = await axios.get(`${this.apiBase}/config`)
+        window.location.href = res.data["domain"]
+      },
+      async saveConfig() {
+        try {
+          this.saving = true
+          await axios.post(`${this.apiBase}/config`, this.config)
+          this.showModal = false
+          this.saving = false
+        } catch (err) {
+          alert("Error saving config: " + err)
+        }
+      },
+      async startCamera(image_id) {
+        this.video = document.getElementById('camera' + image_id)
+        try {
+          // Request access to front camera (for Surface or phone)
+          this.stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" }, // "environment" for back camera
+            audio: false
+          });
+
+          this.video.srcObject = this.stream;
+        } catch (err) {
+          console.error("Camera error:", err);
+          alert("Could not access the camera. Check permissions.");
+        }
+      },
+      stopCamera() {
+        if (this.stream) {
+          this.stream.getTracks().forEach(track => track.stop());
+          this.video.srcObject = null;
+        }
+      },
+      async triggerCapture() {
+        const res = await axios.post(`${this.apiBase}/capture`)
+        this.raw_image_paths.push(res.data["image_path"])
+
+        this.isFlashing = true;
+        setTimeout(() => (this.isFlashing = false), 400);
+        this.showThumb = true;
+
+        setTimeout(() => {
+          this.showThumb = false;
+        }, 1500);
+
+        clearInterval(this.timer);
+
+        setTimeout(() => {
+          this.stopCamera();
+          this.stopCountdown();
+          this.swiper.slideNext();
+        }, 2000);
+      },
+      startPhotoCountdown(time_callback, callback){
+        this.countdown = 0;
+        this.stopCountdown(); // clear previous timers
+        this.timer = setInterval(() => {
+          this.countdown++;
+          if (time_callback & this.countdown == time_callback) {
+            if (callback) {
+              callback()
+            }
+          }
+        }, 1000);
+      },
+      startCountdown(time, time_callback, callback) {
+        this.countdown = time;
+        this.stopCountdown(); // clear previous timers
+        this.timer = setInterval(() => {
+          this.countdown--;
+          if (this.countdown <= 0) {
+            console.log("timeout")
+            clearInterval(this.timer);
+            this.swiper.slideNext();
+            this.stopCamera();
+          }
+          if (this.countdown == 2){
+            this.isFlashing = true;
+            setTimeout(() => (this.isFlashing = false), 400);
+            this.showThumb = true;
+
+            setTimeout(() => {
+              this.showThumb = false;
+            }, 1500);
+          }
+          if (time_callback & this.countdown == time_callback) {
+            if (callback) callback()
+          }
+        }, 1000);
+      },
+      stopCountdown() {
+        if (this.timer) clearInterval(this.timer);
+      },
+      selectLayout(frame) {
+        this.selectedLayout = frame;
+        this.layoutSlots = Array(frame.slots || 3).fill(null);
+        this.selectedImages = Array(frame.slots || 3).fill(null);
+        this.processedImage = null;
+      },
+      selectTopImage(index) {
+        this.selectedTopImage = index;
+        this.assignImageToSlot(this.selectedSlot)
+      },
+      assignImageToSlot(slotIndex) {
+        if (this.selectedTopImage === null) return;
+        const img = this.raw_image_paths[this.selectedTopImage];
+        this.selectedImages[slotIndex] = img;
+        this.selectedSlot = slotIndex;
+        this.processImage();
+      },
+      selectFilterForSlot(filter) {
+        if (this.selectedSlot === null) return;
+        this.selectedSlotFilter = filter;
+        this.slotFilters.splice(this.selectedSlot, 1, filter);
+        this.processImage();
+      },
+      selectFilter(filter) {
+        this.selectedFilter = filter;
+        this.processImage();
+      },
+      selectSlot(i) {
+        this.selectedSlot = i;
+        this.selectedTopImage = this.raw_image_paths.indexOf(this.selectedImages[i])
+        this.selectedSlotFilter = this.slotFilters[i];
+      },
+      async processImage() {
+        if (!this.selectedLayout) return;
+        this.loading = true;
+        const body = {
+          layout_id: this.selectedLayout.id,
+          images: this.selectedImages,
+          filters: this.slotFilters,
+        };
+        try {
+          const res = await fetch("/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const blob = await res.blob();
+
+          // Create a temporary object URL for displaying the image
+          const imageUrl = URL.createObjectURL(blob);
+
+          // Assign to your Vue data property
+          this.processedImage = imageUrl;
+        } catch (e) {
+          console.error(e);
+        } finally {
+          this.loading = false;
+        }
+      },
+      async finalProcessImage() {
+        if (!this.selectedLayout) return;
+        this.loading = true;
+        const body = {
+          layout_id: this.selectedLayout.id,
+          images: this.selectedImages,
+          filters: this.slotFilters,
+        };
+        try {
+          const res = await fetch("/final-process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json()
+          console.log(data)
+          this.processedImage = this.config["domain"] + "processed-images/" + this.config["topic"] + "/" + data["image_id"];
+          this.finalProcessImagePath = data["image_path"]
+          setTimeout(() => {
+            this.swiper.slideNext();
+          }, 2000);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          this.loading = false;
+        }
+      },
+      async printImage() {
+        if (!this.selectedLayout) return;
+        const body = {
+          image_path: this.finalProcessImagePath
+        };
+        try {
+          const res = await fetch("/print", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const blob = await res.blob();
+          const imageUrl = URL.createObjectURL(blob);
+          this.processedImage = imageUrl;
+          setTimeout(() => {
+            this.goHome()
+          }, 10000);
+        } catch (e) {
+          console.error(e);
+        }
+      },
+      handleFileUpload(e) {
+        const file = e.target.files[0];
+        if (file) {
+          this.selectedFile = file;
+          this.previewUrl = URL.createObjectURL(file);
+        }
+      },
+      cancelUpload() {
+        this.selectedFile = null;
+        this.previewUrl = null;
+      },
+      async uploadFrame() {
+        if (!this.selectedFile) return;
+        this.uploading = true;
+        try {
+          const formData = new FormData();
+          formData.append("file", this.selectedFile);
+          const res = await fetch(`${this.config.domain}frames/${this.config.topic}`, {
+            method: "POST",
+            body: formData,
+          });
+          const data = await res.json();
+          this.uploadedFile = data.filename;
+          this.cancelUpload();
+        } catch (err) {
+          alert("Upload failed!");
+        } finally {
+          this.uploading = false;
+        }
+      },
+      acceptAndNext() {
+        clearInterval(this.timer);
+        this.stopCountdown();
+        if (this.swiper) this.swiper.slideNext();
+      },
+    }
+  });
+  app.mount('#app');
+</script>
+</body>
+</html>
