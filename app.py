@@ -58,7 +58,7 @@ Get-PnpDevice | Where-Object { $_.FriendlyName -like '*$camera_code*' } |
 Select-Object FriendlyName, Status
 """.replace("$camera_code", camera_code)]
 
-printer_control_cmd = ["rundll32", "shimgvw.dll,ImageView_PrintTo", "/pt", "$image_path", "$printer_code".replace("$printer_code", printer_name)]
+printer_control_cmd = ["rundll32", "shimgvw.dll,ImageView_PrintTo", "/pt", '$image_path', '$printer_code'.replace("$printer_code", printer_name)]
 
 CONFIG_PATH = Path("config.yml")
 
@@ -225,9 +225,21 @@ async def capture():
     now = datetime.now()
     timestamp = now.strftime("%Y%m%d%H%M%S")
 
-    image_path = camera.capture_single_image(autofocus=False, image_postfix=timestamp)
+    result = subprocess.run(
+        [
+            "wsl",
+            "gphoto2",
+            "--capture-image-and-download",
+            "--filename",
+            f"./{topic}/images/{collection_name}_{timestamp}.jpg"
+        ],
+        capture_output=True,
+        text=True
+    )
 
-    return {"image_path": image_path}
+    # image_path = camera.capture_single_image(autofocus=False, image_postfix=timestamp)
+
+    return {"image_path": f"{collection_name}_{timestamp}.jpg"}
 
 class ProcessInfo(BaseModel):
     images: List[str] | None

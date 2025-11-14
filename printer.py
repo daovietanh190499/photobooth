@@ -6,7 +6,7 @@ class Printer():
             "rundll32",
             "shimgvw.dll,ImageView_PrintTo",
             "/pt",
-            "$image_path"
+            '"$image_path"'
         ]
     ):
         self.window_command = print_command
@@ -16,4 +16,4 @@ class Printer():
         for command in self.window_command:
             full_command.append(command.replace("$image_path", image_path))
         print(full_command)
-        subprocess.run(self.window_command, shell=True)
+        subprocess.run(full_command, shell=True)

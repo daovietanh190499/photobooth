@@ -167,6 +167,52 @@ class Processor:
         # Lưu ảnh
         os.makedirs(self.processed_folder, exist_ok=True)
         result_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(output_path, result_bgr)
+
+        img = result_bgr
+
+        h, w = img.shape[:2]
+        aspect_wh = w / h
+        aspect_hw = h / w
+
+        # Standard aspect ratios
+        ratio_4x6 = 6 / 4  # 1.5
+        ratio_2x6 = 6 / 2  # 3.0
+
+        def approx(a, b, tol=0.15):
+            return abs(a - b) / b < tol
+
+        print(f"Image size: {w}x{h} | w/h={aspect_wh:.2f}, h/w={aspect_hw:.2f}")
+
+        # --- Case 1: Already ~4x6 or rotated 6x4 ---
+        if approx(aspect_wh, ratio_4x6):
+            print("≈ 4x6 ratio detected (portrait)")
+            resized = cv2.resize(img, (int(h * ratio_4x6), h))
+
+        elif approx(aspect_hw, ratio_4x6):
+            print("≈ 4x6 ratio detected but rotated → rotating 90°")
+            img_rot = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+            h, w = img_rot.shape[:2]
+            resized = cv2.resize(img_rot, (int(h * ratio_4x6), h))
+
+        # --- Case 2: ~2x6 ratio or rotated 6x2 ---
+        elif approx(aspect_wh, ratio_2x6):
+            print("≈ 2x6 ratio detected → duplicating vertically")
+            combined = np.concatenate([img, img], axis=0)
+            h2, w2 = combined.shape[:2]
+            resized = cv2.resize(combined, (int(h2 * ratio_4x6), h2))
+
+        elif approx(aspect_hw, ratio_2x6):
+            print("≈ 2x6 ratio detected but rotated → rotating 90° and duplicating")
+            img_rot = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+            combined = np.concatenate([img_rot, img_rot], axis=0)
+            h2, w2 = combined.shape[:2]
+            resized = cv2.resize(combined, (int(h2 * ratio_4x6), h2))
+
+        # --- Fallback: force 4x6 ratio ---
+        else:
+            print("Unknown ratio → resizing to 4x6 by default")
+            resized = cv2.resize(img, (int(h * ratio_4x6), h))
+
+        cv2.imwrite(output_path, resized)
 
         return output_path,  f"{self.collection_name}_{frame_id.split(".")[0]}_{image_index}.jpg"
