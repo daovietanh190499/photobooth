@@ -63,10 +63,9 @@ class Processor:
             top_boxes = []
 
         return len(top_boxes), top_boxes, frame_ratio
-
-    def process(self, frame_id, image_paths, filter_types):
+    
+    def base_process(self, frame_id, image_paths, filter_types):
         frame_path = os.path.join(self.frame_folder, f"{frame_id}")
-        output_path = os.path.join(self.processed_folder, f"processed_{frame_id}.jpg")
 
         frame = cv2.imread(frame_path)
         if frame is None:
@@ -98,6 +97,12 @@ class Processor:
                 filtered = self._apply_filter(image_paths[i], filter_types[i % len(filter_types)])
             else:
                 filtered = Image.open(os.path.join(self.save_folder, image_paths[i])).convert("RGB")
+            
+            shape = filtered.size
+            h_new = int((shape[1]/shape[0])*w)
+            delta_h = (h_new - h)/2
+            h = h_new
+            y = int(y - delta_h) if int(y - delta_h) > 0 else 0
             filtered = filtered.resize((w, h))
             filtered_np = np.array(filtered)
 
@@ -107,56 +112,20 @@ class Processor:
 
             # Chèn pixel tương ứng
             frame_rgb[y:y+h, x:x+w][local_mask_bool] = filtered_np[local_mask_bool]
-        
-        print(frame_rgb.shape)
+
+        return frame_rgb, photo_mask, qr_mask 
+
+    def process(self, frame_id, image_paths, filter_types):
+        frame_rgb, _, _ = self.base_process(frame_id, image_paths, filter_types)
         frame_rgb = cv2.resize(frame_rgb, (int(frame_rgb.shape[1]/4), int(frame_rgb.shape[0]/4)))
         return frame_rgb
 
     def final_process(self, frame_id, image_paths, filter_types):
         now = datetime.datetime.now()
         image_index = now.strftime("%Y%m%d%H%M%S")
-        frame_path = os.path.join(self.frame_folder, f"{frame_id}")
         output_path = os.path.join(self.processed_folder, f"{self.collection_name}_{frame_id.split(".")[0]}_{image_index}.jpg")
 
-        frame = cv2.imread(frame_path)
-        if frame is None:
-            raise FileNotFoundError(f"Frame {frame_path} not found")
-
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        # Mã màu vùng ảnh và QR
-        photo_color = "#838600"
-        qr_color = "#868686"
-
-        # Mask các vùng tương ứng
-        photo_mask = self._create_mask(frame_rgb, photo_color, tolerance=25)
-        qr_mask = self._create_mask(frame_rgb, qr_color, tolerance=25)
-
-        # Lấy bounding box từng vùng để resize ảnh phù hợp
-        contours, _ = cv2.findContours(photo_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        photo_boxes = [cv2.boundingRect(c) for c in contours if cv2.contourArea(c) > 500]
-        photo_boxes.sort(key=lambda b: (b[1], b[0]))
-
-        # Chèn ảnh theo thứ tự
-        for i, box in enumerate(photo_boxes):
-            if i >= len(image_paths):
-                break
-            x, y, w, h = box
-
-            # Ảnh filter
-            if len(filter_types) >= 1:
-                filtered = self._apply_filter(image_paths[i], filter_types[i % len(filter_types)])
-            else:
-                filtered = Image.open(os.path.join(self.save_folder, image_paths[i])).convert("RGB")
-            filtered = filtered.resize((w, h))
-            filtered_np = np.array(filtered)
-
-            # Vùng mask cục bộ
-            local_mask = photo_mask[y:y+h, x:x+w]
-            local_mask_bool = local_mask > 0
-
-            # Chèn pixel tương ứng
-            frame_rgb[y:y+h, x:x+w][local_mask_bool] = filtered_np[local_mask_bool]
+        frame_rgb, _, qr_mask = self.base_process(frame_id, image_paths, filter_types)
             
         contours, _ = cv2.findContours(qr_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         qr_boxes = [cv2.boundingRect(c) for c in contours if cv2.contourArea(c) > 500]
@@ -195,13 +164,13 @@ class Processor:
         # --- Case 1: Already ~4x6 or rotated 6x4 ---
         if approx(aspect_wh, ratio_4x6):
             print("≈ 4x6 ratio detected (portrait)")
-            resized = cv2.resize(img, (int(h * ratio_4x6), h))
+            resized = img
 
         elif approx(aspect_hw, ratio_4x6):
             print("≈ 4x6 ratio detected but rotated → rotating 90°")
             img_rot = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
             h, w = img_rot.shape[:2]
-            resized = cv2.resize(img_rot, (int(h * ratio_4x6), h))
+            resized = img_rot
 
         # --- Case 2: ~2x6 ratio or rotated 6x2 ---
         elif approx(aspect_wh, ratio_2x6):
@@ -214,7 +183,7 @@ class Processor:
             img[-3, :] = 0
             combined = np.concatenate([img, img], axis=0)
             h2, w2 = combined.shape[:2]
-            resized = cv2.resize(combined, (int(h2 * ratio_4x6), h2))
+            resized = combined
 
         elif approx(aspect_hw, ratio_2x6):
             print("≈ 2x6 ratio detected but rotated → rotating 90° and duplicating")
@@ -227,12 +196,11 @@ class Processor:
             img_rot[-3, :] = 0
             combined = np.concatenate([img_rot, img_rot], axis=0)
             h2, w2 = combined.shape[:2]
-            resized = cv2.resize(combined, (int(h2 * ratio_4x6), h2))
+            resized = combined
 
         # --- Fallback: force 4x6 ratio ---
         else:
-            print("Unknown ratio → resizing to 4x6 by default")
-            resized = cv2.resize(img, (int(h * ratio_4x6), h))
+            resized = img
 
         cv2.imwrite(output_path, resized)
 

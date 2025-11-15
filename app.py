@@ -174,14 +174,18 @@ async def capture(file: UploadFile = File(...)):
     with open(f"{save_folder}{collection_name}_{timestamp}.jpg", "wb") as f:
         f.write(await file.read())
 
-    result = subprocess.run(
-        [
-            command.replace("$image_path", f"{save_folder}{collection_name}_{timestamp}.jpg") 
-            for command in control_camera_command
-        ],
-        capture_output=True,
-        text=True
-    )
+    try:
+        subprocess.run(
+            [
+                command.replace("$image_path", f"{save_folder}{collection_name}_{timestamp}.jpg") 
+                for command in control_camera_command
+            ],
+            capture_output=True,
+            timeout=3,
+            text=True
+        )
+    except subprocess.TimeoutExpired:
+        print("Capture Timeout, Fallback to webcam")
 
     return {"image_path": f"{collection_name}_{timestamp}.jpg"}
 
@@ -349,7 +353,7 @@ async def list_frames(topic_name: str, query_param: str = None):
     return {"query_param": query_param, "files": [{"id": os.path.split(file)[-1], "slots": slots[0], "ratio": slots[1]} for file, slots in zip(files, slots_list)]}
 
 @app.get("/frames/{topic_name}/{frame_id}")
-async def list_frames(topic_name: str, frame_id: str, query_param: str = None):
+async def retrieve_frames(topic_name: str, frame_id: str, query_param: str = None):
     config = load_config(CONFIG_PATH)
     topic = config.get("topic")
     _, _, _, _, frame_folder = get_paths(config)
@@ -399,7 +403,7 @@ async def read_image(topic_name: str, image_id: str, query_param: str = None):
     return HTTPException(status_code=404, detail="Page not found.")
 
 @app.get("/raw-images/{topic_name}/{image_id}")
-async def read_image(topic_name: str, image_id: str, query_param: str = None):
+async def raw_image(topic_name: str, image_id: str, query_param: str = None):
     config = load_config(CONFIG_PATH)
     topic = config.get("topic")
     _, _, save_folder, _, _ = get_paths(config)
@@ -416,7 +420,7 @@ async def read_image(topic_name: str, image_id: str, query_param: str = None):
     return HTTPException(status_code=404, detail="Page not found.")
 
 @app.get("/processed-images/{topic_name}")
-async def list_image(topic_name: str, query_param: str = None):
+async def list_processed_image(topic_name: str, query_param: str = None):
     config = load_config(CONFIG_PATH)
     topic = config.get("topic")
     _, _, _, processed_folder, _ = get_paths(config)
@@ -427,7 +431,7 @@ async def list_image(topic_name: str, query_param: str = None):
     return {"query_param": query_param, "files": files}
 
 @app.get("/processed-images/{topic_name}/{image_id}")
-async def read_image(topic_name: str, image_id: str, query_param: str = None):
+async def read_processed_image(topic_name: str, image_id: str, query_param: str = None):
     config = load_config(CONFIG_PATH)
     topic = config.get("topic")
     _, _, _, processed_folder, _ = get_paths(config)
