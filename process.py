@@ -40,6 +40,7 @@ class Processor:
         """
         frame_path = os.path.join(self.frame_folder, f"{frame_id}")
         frame = cv2.imread(frame_path)
+        frame_ratio = frame.shape[1]/frame.shape[0]
         if frame is None:
             raise FileNotFoundError(f"Frame {frame_path} not found")
 
@@ -61,7 +62,7 @@ class Processor:
         else:
             top_boxes = []
 
-        return len(top_boxes), top_boxes
+        return len(top_boxes), top_boxes, frame_ratio
 
     def process(self, frame_id, image_paths, filter_types):
         frame_path = os.path.join(self.frame_folder, f"{frame_id}")
@@ -106,8 +107,9 @@ class Processor:
 
             # Chèn pixel tương ứng
             frame_rgb[y:y+h, x:x+w][local_mask_bool] = filtered_np[local_mask_bool]
-            
-        frame_rgb = frame_rgb.resize((frame_rgb.shape[1]/4, frame_rgb.shape[0]/4))
+        
+        print(frame_rgb.shape)
+        frame_rgb = cv2.resize(frame_rgb, (int(frame_rgb.shape[1]/4), int(frame_rgb.shape[0]/4)))
         return frame_rgb
 
     def final_process(self, frame_id, image_paths, filter_types):

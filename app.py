@@ -162,7 +162,7 @@ async def video_feed(request: Request):
     )
 
 @app.post("/capture")
-async def capture():
+async def capture(file: UploadFile = File(...)):
     now = datetime.now()
     timestamp = now.strftime("%Y%m%d%H%M%S")
     
@@ -170,6 +170,9 @@ async def capture():
     control_camera_command = config.get("commands").get("camera").get("control_cam_command")
     collection_name = config.get("collection_name")
     _, _, save_folder, _, _ = get_paths(config)
+    
+    with open(f"{save_folder}{collection_name}_{timestamp}.jpg", "wb") as f:
+        f.write(await file.read())
 
     result = subprocess.run(
         [
@@ -341,9 +344,9 @@ async def list_frames(topic_name: str, query_param: str = None):
     files = os.listdir(frame_folder)
     slots_list = []
     for file in files:
-        slots, bbox = processor.count_photo_areas(file)
-        slots_list.append(slots)
-    return {"query_param": query_param, "files": [{"id": os.path.split(file)[-1], "slots": slots} for file, slots in zip(files, slots_list)]}
+        slots, bbox, ratio = processor.count_photo_areas(file)
+        slots_list.append((slots, ratio))
+    return {"query_param": query_param, "files": [{"id": os.path.split(file)[-1], "slots": slots[0], "ratio": slots[1]} for file, slots in zip(files, slots_list)]}
 
 @app.get("/frames/{topic_name}/{frame_id}")
 async def list_frames(topic_name: str, frame_id: str, query_param: str = None):

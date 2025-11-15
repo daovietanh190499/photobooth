@@ -33,6 +33,7 @@ commands:
     - --capture-image-and-download
     - --filename
     - $image_path
+    - --force-overwrite
     stat_cam_command:
     - powershell
     - -Command
