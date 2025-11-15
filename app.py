@@ -168,6 +168,7 @@ async def capture(file: UploadFile = File(...)):
     
     config = load_config(CONFIG_PATH)
     control_camera_command = config.get("commands").get("camera").get("control_cam_command")
+    topic = config.get("topic")
     collection_name = config.get("collection_name")
     _, _, save_folder, _, _ = get_paths(config)
     
@@ -177,7 +178,7 @@ async def capture(file: UploadFile = File(...)):
     try:
         subprocess.run(
             [
-                command.replace("$image_path", f"{save_folder}{collection_name}_{timestamp}.jpg") 
+                command.replace("$image_path", f"./{topic}/images/{collection_name}_{timestamp}.jpg") 
                 for command in control_camera_command
             ],
             capture_output=True,
