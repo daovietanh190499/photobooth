@@ -200,6 +200,12 @@ class Processor:
         # --- Case 2: ~2x6 ratio or rotated 6x2 ---
         elif approx(aspect_wh, ratio_2x6):
             print("≈ 2x6 ratio detected → duplicating vertically")
+            img[0, :] = 0
+            img[1, :] = 0
+            img[2, :] = 0
+            img[-1, :] = 0
+            img[-2, :] = 0
+            img[-3, :] = 0
             combined = np.concatenate([img, img], axis=0)
             h2, w2 = combined.shape[:2]
             resized = cv2.resize(combined, (int(h2 * ratio_4x6), h2))
@@ -207,6 +213,12 @@ class Processor:
         elif approx(aspect_hw, ratio_2x6):
             print("≈ 2x6 ratio detected but rotated → rotating 90° and duplicating")
             img_rot = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+            img_rot[0, :] = 0
+            img_rot[1, :] = 0
+            img_rot[2, :] = 0
+            img_rot[-1, :] = 0
+            img_rot[-2, :] = 0
+            img_rot[-3, :] = 0
             combined = np.concatenate([img_rot, img_rot], axis=0)
             h2, w2 = combined.shape[:2]
             resized = cv2.resize(combined, (int(h2 * ratio_4x6), h2))
