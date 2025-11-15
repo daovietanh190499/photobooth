@@ -157,15 +157,21 @@ class Processor:
 
             # Chèn pixel tương ứng
             frame_rgb[y:y+h, x:x+w][local_mask_bool] = filtered_np[local_mask_bool]
-
-        # Tạo QR code
-        qr_data = f"{self.domain}/{self.topic}/processed/{self.collection_name}_{frame_id.split(".")[0]}_{image_index}.jpg"
+            
+        contours, _ = cv2.findContours(qr_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        qr_boxes = [cv2.boundingRect(c) for c in contours if cv2.contourArea(c) > 500]
+        qr_boxes.sort(key=lambda b: (b[1], b[0]))
+        
+        x, y, w, h = qr_boxes[0]
+        qr_data = f"{self.domain}/processed-images/{self.topic}/{self.collection_name}_{frame_id.split(".")[0]}_{image_index}.jpg"
         qr_img = qrcode.make(qr_data).convert("RGB")
-        qr_img = qr_img.resize((frame_rgb.shape[1], frame_rgb.shape[0]))
+        qr_img = qr_img.resize((w, h))
         qr_np = np.array(qr_img)
 
-        # Chèn QR vào các vùng QR mask (trên toàn ảnh)
-        frame_rgb[qr_mask > 0] = qr_np[qr_mask > 0]
+        local_mask = qr_mask[y:y+h, x:x+w]
+        local_mask_bool = local_mask > 0
+
+        frame_rgb[y:y+h, x:x+w][local_mask_bool] = qr_np[local_mask_bool]
 
         # Lưu ảnh
         os.makedirs(self.processed_folder, exist_ok=True)
