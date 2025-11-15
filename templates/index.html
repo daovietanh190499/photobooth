@@ -176,16 +176,6 @@
         </div>
       </section>
 
-      <!-- Slide 3: Timer -->
-      <!-- <section class="swiper-slide flex flex-col items-center justify-center p-8">
-        <h2 class="text-4xl font-semibold mb-4 text-center">Choose your timer</h2>
-        <div class="flex gap-6 mt-8">
-          <button class="px-8 py-4 rounded-full ghost text-gray-700"><i class="fa-solid fa-stopwatch"></i> 3s</button>
-          <button class="px-10 py-4 rounded-full border-2 border-pinky text-pinky font-semibold bg-white"><i class="fa-solid fa-stopwatch"></i> 5s</button>
-          <button class="px-8 py-4 rounded-full ghost text-gray-700"><i class="fa-solid fa-stopwatch"></i> 10s</button>
-        </div>
-      </section> -->
-
       <section class="swiper-slide relative flex items-center justify-center bg-black">
         <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
         <video id="camera1" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
@@ -270,35 +260,6 @@
         <img v-if="showThumb" src="http://localhost:8000/static/images/capture.png" alt="capture" class="capture-thumb" />
       </section>
 
-      <!-- Slide 4: Camera -->
-      <!-- <section class="swiper-slide flex flex-col items-center justify-start p-6">
-        <div class="w-full flex justify-between items-center px-6">
-          <div class="text-sm text-gray-500">1 of 3</div>
-          <button class="px-3 py-2 rounded-full ghost"><i class="fa-solid fa-xmark"></i> Exit</button>
-        </div>
-        <div class="flex-1 w-full flex items-center justify-center px-6">
-          <div class="w-[82%] h-[70%] relative">
-            <div class="camera-preview">
-              <div class="absolute top-4 left-4 bg-white/20 py-1 px-3 rounded-md text-xs"><i class="fa-solid fa-circle text-red-500"></i> Live</div>
-              <i class="fa-solid fa-user text-6xl opacity-50"></i>
-            </div>
-            <div class="absolute right-[-84px] top-8 flex flex-col gap-4">
-              <button class="w-20 h-20 rounded-full bg-white shadow flex items-center justify-center"><i class="fa-solid fa-xmark text-2xl"></i></button>
-              <button class="w-20 h-20 rounded-full bg-green-500 text-white shadow flex items-center justify-center"><i class="fa-solid fa-check text-2xl"></i></button>
-              <button class="w-20 h-20 rounded-full bg-red-100 text-red-600 shadow flex items-center justify-center"><i class="fa-solid fa-trash text-2xl"></i></button>
-            </div>
-            <div class="absolute bottom-[-64px] left-0 w-full filter-bar">
-              <div class="filter-pill">None</div>
-              <div class="filter-pill">Moon</div>
-              <div class="filter-pill">Sun</div>
-              <div class="filter-pill bg-amber-50 border-2 border-pinky/60">Dream</div>
-              <div class="filter-pill">Desert</div>
-              <div class="filter-pill">Mint</div>
-            </div>
-          </div>
-        </div>
-      </section> -->
-
       <section
         class="swiper-slide flex flex-col items-center justify-between p-4 relative bg-gray-50"
         id="process-slide"
@@ -319,22 +280,6 @@
         <!-- MAIN AREA -->
         <div class="flex flex-1 w-full items-center justify-center relative mt-2">
           <!-- LEFT BAR: Layout positions -->
-          <!-- <div class="flex flex-col space-y-4 mr-6">
-            <div
-              v-for="(slot, i) in layoutSlots"
-              :key="i"
-              class="w-20 h-20 border-2 rounded-lg flex items-center justify-center cursor-pointer relative bg-gray-100 hover:border-pink-300"
-              :class="selectedSlot === i ? 'border-pink-500' : 'border-gray-300'"
-              @click="assignImageToSlot(i)"
-            >
-              <img
-                v-if="selectedImages[i]"
-                :src="'http://localhost:8000/images/' + config.topic + '/' + selectedImages[i]"
-                class="w-full h-full object-cover rounded-md"
-              />
-              <span v-else class="text-gray-400 text-sm">+</span>
-            </div>
-          </div> -->
 
           <div class="flex flex-col space-y-4 mr-6">
             <div
@@ -392,20 +337,6 @@
             </div>
           </div>
 
-          <!-- RIGHT BAR: Filters -->
-          <!-- <div class="flex flex-col space-y-3 ml-6 overflow-y-auto h-[60vh] hide-scrollbar">
-            <div
-              v-for="(filter, index) in filters"
-              :key="index"
-              @click="selectFilter(filter)"
-              class="px-3 py-2 rounded-md cursor-pointer bg-gray-100 hover:bg-pink-100 text-sm text-gray-700"
-              :class="selectedFilter === filter ? 'bg-pink-300 text-white' : ''"
-            >
-              {{ filter }}
-            </div>
-          </div>
-        </div> -->
-
         <div class="flex flex-col space-y-3 ml-6 overflow-y-auto h-[60vh] hide-scrollbar">
           <div
             v-for="(filter, index) in filters"
@@ -451,8 +382,8 @@
         <div class="bg-white p-10 rounded-3xl shadow-xl max-w-2xl text-center">
           <h3 class="text-3xl font-semibold mb-6"><i class="fa-solid fa-circle-exclamation text-red-500 mr-2"></i>Bạn có muốn lưu lại ảnh và in ảnh không?</h3>
           <div class="flex gap-6 justify-center">
-            <button class="px-8 py-3 rounded-full ghost border" @click="goHome()"><i class="fa-solid fa-circle-xmark"></i> Khong</button>
-            <button class="px-8 py-3 rounded-full bg-pinky-100 text-red-600 border border-pinky-300" @click="nextSlide()"><i class="fa-solid fa-right-from-bracket"></i> Co</button>
+            <button class="px-8 py-3 rounded-full ghost border" @click="goHome()"><i class="fa-solid fa-circle-xmark"></i> Không</button>
+            <button class="px-8 py-3 rounded-full bg-pinky-100 text-red-600 border border-pinky-300" @click="nextSlide()"><i class="fa-solid fa-right-from-bracket"></i> Có</button>
           </div>
         </div>
       </section>
@@ -463,11 +394,6 @@
           <span class="w-12 h-12 rounded-full border-2 border-pinky flex items-center justify-center"><i class="fa-solid fa-images text-pinky"></i></span>
           <div class="text-3xl font-semibold">Your collage is being processed...</div>
         </div>
-        <!-- <div class="w-[60%] mt-10 scene-img p-6">
-          <div class="w-full h-64 bg-white/60 rounded-md flex items-center justify-center opacity-60">
-            <i class="fa-solid fa-spinner fa-spin text-3xl text-pinky"></i>
-          </div>
-        </div> -->
         <div class="relative w-[35%] max-w-[640px] aspect-[4/6] bg-white rounded-xl shadow-lg overflow-hidden">
           <div
             v-if="loading"
@@ -590,13 +516,13 @@
           </h3>
           <div>
             <label>Printer Control Command</label>
-            <textarea v-model="config.commands.printer.win_control_printer_command" class="w-full border rounded-md p-2 h-20"></textarea>
+            <textarea v-model="config.commands.printer.control_printer_command" class="w-full border rounded-md p-2 h-20"></textarea>
             <label>Printer Status Command</label>
-            <textarea v-model="config.commands.printer.win_stat_printer_command" class="w-full border rounded-md p-2 h-20"></textarea>
+            <textarea v-model="config.commands.printer.stat_printer_command" class="w-full border rounded-md p-2 h-20"></textarea>
             <label>Camera Control Command</label>
-            <input v-model="config.commands.camera.win_control_cam_command" class="w-full border rounded-md p-2"/>
+            <input v-model="config.commands.camera.control_cam_command" class="w-full border rounded-md p-2"/>
             <label>Camera Status Command</label>
-            <textarea v-model="config.commands.camera.win_stat_cam_command" class="w-full border rounded-md p-2 h-20"></textarea>
+            <textarea v-model="config.commands.camera.stat_cam_command" class="w-full border rounded-md p-2 h-20"></textarea>
           </div>
         </div>
 
@@ -639,13 +565,6 @@
         </div>
       </div>
     </div>
-
-
-    <!-- navigation -->
-    <!-- <div class="absolute top-6 right-6 z-50">
-      <button id="prevBtn" class="px-3 py-2 rounded-md ghost mr-2"><i class="fa-solid fa-arrow-left"></i></button>
-      <button id="nextBtn" class="px-3 py-2 rounded-md bg-pinky text-white"><i class="fa-solid fa-arrow-right"></i></button>
-    </div> -->
   </div>
 </div>
 
@@ -667,61 +586,50 @@
         activeTab: 'General',
         tabs: ['General', 'Printer', 'Camera', 'Network', 'Commands'],
         config: {
-            "operating_system": "Windows",
-            "domain": "https://gacon1.gacontamnang.com/",
-            "topic": "levinh_kimanh",
-            "collection_name": "gacon",
+            "operating_system": "---",
+            "domain": "---",
+            "topic": "---",
+            "collection_name": "---",
             "folders": {
-                "root_folder": "C:\\Users\\Administrator\\Documents",
+                "root_folder": "---",
                 "save_folder": "$topic_folder\\images\\",
                 "processed_folder": "$topic_folder\\processed\\",
                 "frame_folder": "$topic_folder\\frames\\"
             },
             "printer": {
-                "name": "Canon SELPHY CP1000",
-                "code": "CP1000"
+                "name": "---",
+                "code": "---"
             },
             "camera": {
-                "name": "Nikon D3300",
-                "code": "D3300",
+                "name": "---",
+                "code": "---",
                 "streaming_camera_id": 0
             },
             "commands": {
                 "printer": {
-                    "win_control_printer_command": [
-                        "rundll32",
-                        "shimgvw.dll,ImageView_PrintTo",
-                        "/pt",
-                        "$image_path",
-                        "$printer_code"
+                    "control_printer_command": [
+                        "---"
                     ],
-                    "win_stat_printer_command": [
-                        "powershell",
-                        "-Command",
-                        "Get-Printer | Select Name, PrinterStatus"
+                    "stat_printer_command": [
+                        "---"
                     ]
                 },
                 "camera": {
-                    "win_control_cam_command": "C:\\Program Files (x86)\\digiCamControl\\CameraControlCmd.exe",
-                    "win_stat_cam_command": [
-                        "powershell",
-                        "-Command",
-                        "Get-PnpDevice | Where-Object { $_.FriendlyName -like '*$camera_code*' } | Select-Object FriendlyName, Status"
+                    "control_cam_command": [
+                      "---"
+                    ],
+                    "stat_cam_command": [
+                        "---"
                     ]
                 }
             }
         },
-        frames: [
-            {"id": "151ee779000d4f229d8eb7630ff0d6e3.jpg", "slots":2},
-            {"id": "71060f51f3d5493db1ac9c75bae1b8d9.jpg", "slots":2},
-            {"id": "7fa0afdd71394724be68613df540f21e.jpg", "slots":2}
-        ],
+        frames: [],
         loading: true,
         saving: false,
         wifiStatus: null,
         stat: { printer_stat: '-', camera_stat: '-' },
         wifi: { ssid: '', password: '' },
-        apiBase: "http://127.0.0.1:8000",
         countdown: 0,
         circumference: 2 * Math.PI * 88,
         timer: null,
@@ -730,7 +638,7 @@
         videoSrc: "http://127.0.0.1:8000/video_feed",
         filters: ["None", "Moon", "Sun", "Dream", "Desert", "Mint"],
         selectedFilter: "None",
-        selectedLayout: {"id": "151ee779000d4f229d8eb7630ff0d6e3.jpg", "slots": 2},
+        selectedLayout: null,
         layoutSlots: [null, null],
         selectedSlot: null,
         slotFilters: [],
@@ -745,7 +653,7 @@
         finalProcessImagePath: null,
       }
     },
-    mounted() {
+    async mounted() {
       const swiper = new Swiper('.swiper', {
         slidesPerView: 1,
         spaceBetween: 0,
@@ -754,31 +662,37 @@
       });
       this.swiper = swiper
 
-      swiper.autoplay.stop();
+      console.log(swiper)
 
-      swiper.on('slideChange', () => {
-        if (swiper.activeIndex === 1) {
+      this.swiper.autoplay.stop();
+
+      this.swiper.on('slideChange', () => {
+        if (this.swiper.activeIndex === 1) {
           this.startCountdown(10);
           this.raw_image_paths = []
           this.processed_image_path = null
         }
-        if (swiper.activeIndex >= 2 & swiper.activeIndex <= 7) {
-          this.startCamera(swiper.activeIndex - 1)
+        if (this.swiper.activeIndex >= 2 & this.swiper.activeIndex <= 7) {
+          this.startCamera(this.swiper.activeIndex - 1)
           this.startPhotoCountdown(5, this.triggerCapture);
         }
-        if (swiper.activeIndex === 8) {
+        if (this.swiper.activeIndex === 8) {
           this.startCountdown(120);
         }
-        if (swiper.activeIndex === 9) {
+        if (this.swiper.activeIndex === 9) {
 
         }
-        if (swiper.activeIndex === 10) {
+        if (this.swiper.activeIndex === 10) {
           this.finalProcessImage();
         }
-        if (swiper.activeIndex === 11) {
+        if (this.swiper.activeIndex === 11) {
           this.printImage();
         }
       });
+
+      conf = await axios.get(`/config`)
+
+      this.config = conf.data
 
       this.fetchFrames();
 
@@ -789,8 +703,6 @@
       });
 
       // swiper.slideTo(8)
-      // document.getElementById('prevBtn').addEventListener('click', () => swiper.slidePrev());
-      // document.getElementById('nextBtn').addEventListener('click', () => swiper.slideNext());
     },
     computed: {
       dashOffset() {
@@ -828,21 +740,21 @@
         this.loading = true
         this.showModal = true
         const [conf, stat] = await Promise.all([
-          axios.get(`${this.apiBase}/config`),
-          axios.get(`${this.apiBase}/stat`)
+          axios.get(`/config`),
+          axios.get(`/stat`)
         ])
         this.config = conf.data
         this.stat = stat.data.data
         this.loading = false
       },
       async openHelper() {
-        const res = await axios.get(`${this.apiBase}/config`)
+        const res = await axios.get(`/config`)
         window.location.href = res.data["domain"]
       },
       async saveConfig() {
         try {
           this.saving = true
-          await axios.post(`${this.apiBase}/config`, this.config)
+          await axios.post(`/config`, this.config)
           this.showModal = false
           this.saving = false
         } catch (err) {
@@ -871,7 +783,7 @@
         }
       },
       async triggerCapture() {
-        const res = await axios.post(`${this.apiBase}/capture`)
+        const res = await axios.post(`/capture`)
         this.raw_image_paths.push(res.data["image_path"])
 
         this.isFlashing = true;
@@ -951,10 +863,6 @@
         if (this.selectedSlot === null) return;
         this.selectedSlotFilter = filter;
         this.slotFilters.splice(this.selectedSlot, 1, filter);
-        this.processImage();
-      },
-      selectFilter(filter) {
-        this.selectedFilter = filter;
         this.processImage();
       },
       selectSlot(i) {
@@ -1054,7 +962,7 @@
         try {
           const formData = new FormData();
           formData.append("file", this.selectedFile);
-          const res = await fetch(`${this.config.domain}frames/${this.config.topic}`, {
+          const res = await fetch(`/frames/${this.config.topic}`, {
             method: "POST",
             body: formData,
           });

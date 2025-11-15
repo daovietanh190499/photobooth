@@ -1,0 +1,4 @@
+pilgram
+qrcode
+opencv-python
+pyyaml

@@ -2,11 +2,11 @@ import os
 import cv2
 import yaml
 import io
-from camera import Camera
-from printer import Printer
 from process import Processor
 from datetime import datetime
 from pathlib import Path
+
+from utils import load_config, get_paths
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File
 from fastapi.responses import HTMLResponse, StreamingResponse, FileResponse, JSONResponse
@@ -21,72 +21,7 @@ import uuid
 import numpy as np
 import qrcode
 
-operating_system = "Windows"
-
-domain = "https://gacon1.gacontamnang.com/"
-
-topic = "levinh_kimanh"
-
-root_folder = "C:\\Users\\Administrator\\Documents"
-
-topic_folder = os.path.join(root_folder, topic)
-
-camera_control_cmd_path = 'C:\\Program Files (x86)\\digiCamControl\\CameraControlCmd.exe'
-
-save_folder = "$topic_folder\\images\\".replace("$topic_folder", topic_folder)
-
-processed_folder = "$topic_folder\\processed\\".replace("$topic_folder", topic_folder)
-
-frame_folder = "$topic_folder\\frames\\".replace("$topic_folder", topic_folder)
-
-collection_name = "gacon"
-
-printer_name = "Canon SELPHY CP1000"
-
-printer_code = "CP1000"
-
-camera_name = "Nikon D3300"
-
-camera_code = "D3300"
-
-streaming_camera_id = 1
-
-win_stat_printer_command = ["powershell", "-Command", 'Get-Printer | Select Name, PrinterStatus']
-
-win_stat_cam_command = ["powershell", "-Command", """
-Get-PnpDevice | Where-Object { $_.FriendlyName -like '*$camera_code*' } |
-Select-Object FriendlyName, Status
-""".replace("$camera_code", camera_code)]
-
-printer_control_cmd = ["rundll32", "shimgvw.dll,ImageView_PrintTo", "/pt", '$image_path', '$printer_code'.replace("$printer_code", printer_name)]
-
 CONFIG_PATH = Path("config.yml")
-
-streaming_camera = cv2.VideoCapture(int(streaming_camera_id))
-
-os.makedirs(topic_folder, exist_ok=True)
-os.makedirs(frame_folder, exist_ok=True)
-os.makedirs(save_folder, exist_ok=True)
-os.makedirs(processed_folder, exist_ok=True)
-
-camera = Camera(
-    control_cmd_location=camera_control_cmd_path,
-    save_folder=save_folder,
-    collection_name=collection_name
-)
-
-printer = Printer(
-    print_command=printer_control_cmd
-)
-
-processor = Processor(
-    save_folder=save_folder,
-    processed_folder=processed_folder,
-    frame_folder=frame_folder,
-    collection_name=collection_name,
-    topic=topic,
-    domain=domain
-)
 
 # Create a FastAPI instance
 app = FastAPI()
@@ -139,11 +74,17 @@ def update_config(new_config: ConfigModel):
 
 @app.get("/stat")
 async def stat():
+    config = load_config(CONFIG_PATH)
+    stat_printer_command = config.get("commands").get("printer").get("stat_printer_command")
+    stat_cam_command = config.get("commands").get("camera").get("stat_cam_command")
+    printer_code = config.get("printer").get("code")
+    camera_code = config.get("camera").get("code")
+    
     printer_stat = False
     cam_stat = False
 
     result = subprocess.run(
-        win_stat_printer_command,
+        [command.replace("$printer_code", printer_code) for command in stat_printer_command],
         capture_output=True,
         text=True
     )
@@ -156,7 +97,7 @@ async def stat():
                 printer_stat = True
 
     result = subprocess.run(
-        win_stat_cam_command,
+        [command.replace("$camera_code", camera_code) for command in stat_cam_command],
         capture_output=True,
         text=True
     )
@@ -224,20 +165,20 @@ async def video_feed(request: Request):
 async def capture():
     now = datetime.now()
     timestamp = now.strftime("%Y%m%d%H%M%S")
+    
+    config = load_config(CONFIG_PATH)
+    control_camera_command = config.get("commands").get("camera").get("control_cam_command")
+    collection_name = config.get("collection_name")
+    _, _, save_folder, _, _ = get_paths(config)
 
     result = subprocess.run(
         [
-            "wsl",
-            "gphoto2",
-            "--capture-image-and-download",
-            "--filename",
-            f"./{topic}/images/{collection_name}_{timestamp}.jpg"
+            command.replace("$image_path", f"{save_folder}{collection_name}_{timestamp}.jpg") 
+            for command in control_camera_command
         ],
         capture_output=True,
         text=True
     )
-
-    # image_path = camera.capture_single_image(autofocus=False, image_postfix=timestamp)
 
     return {"image_path": f"{collection_name}_{timestamp}.jpg"}
 
@@ -253,6 +194,23 @@ async def process(process_info: ProcessInfo):
 
     if not process_info.layout_id:
         raise HTTPException(status_code=400, detail="No frame id provided.")
+
+    config = load_config(CONFIG_PATH)
+    
+    topic = config.get("topic")
+    collection_name = config.get("collection_name")
+    domain = config.get("domain")
+    
+    root_folder, topic_folder, save_folder, processed_folder, frame_folder = get_paths(config)
+    
+    processor = Processor(
+        save_folder=save_folder,
+        processed_folder=processed_folder,
+        frame_folder=frame_folder,
+        collection_name=collection_name,
+        topic=topic,
+        domain=domain
+    )
 
     now = datetime.now()
     timestamp = now.strftime("%Y%m%d%H%M%S")
@@ -283,6 +241,23 @@ async def final_process(process_info: ProcessInfo):
     now = datetime.now()
     timestamp = now.strftime("%Y%m%d%H%M%S")
 
+    config = load_config(CONFIG_PATH)
+    
+    topic = config.get("topic")
+    collection_name = config.get("collection_name")
+    domain = config.get("domain")
+    
+    root_folder, topic_folder, save_folder, processed_folder, frame_folder = get_paths(config)
+
+    processor = Processor(
+        save_folder=save_folder,
+        processed_folder=processed_folder,
+        frame_folder=frame_folder,
+        collection_name=collection_name,
+        topic=topic,
+        domain=domain
+    )
+
     image_path, image_id = processor.final_process(
         process_info.layout_id,
         process_info.images,
@@ -298,7 +273,21 @@ class PrintInfo(BaseModel):
 async def print_image(print_info: PrintInfo):
     if not print_info.image_path:
         raise HTTPException(status_code=400, detail="No image path provided.")
-    printer.window_print(image_path=print_info.image_path)
+    
+    config = load_config(CONFIG_PATH)
+    control_printer_command = config.get("commands").get("printer").get("control_printer_command")
+    printer_name = config.get("printer").get("name")
+    domain = config.get("domain")
+    topic = config.get("topic")
+    
+    full_command = []
+    for command in control_printer_command:
+        full_command.append(
+            command.replace("$image_path", print_info.image_path).replace("$printer_code", printer_name)
+        )
+
+    subprocess.run(full_command, shell=True)
+    
     qr_data = f"{domain}/{topic}/processed/{os.path.split(print_info.image_path)[-1]}"
     qr_img = qrcode.make(qr_data).convert("RGB")
     qr_img = np.array(qr_img)
@@ -312,6 +301,10 @@ async def print_image(print_info: PrintInfo):
 
 @app.post("/frames/{topic_name}")
 async def upload_frames(topic_name: str, file: UploadFile = File(...)):
+    config = load_config(CONFIG_PATH)
+    topic = config.get("topic")
+    _, _, _, _, frame_folder = get_paths(config)
+    
     if topic_name != topic:
         raise HTTPException(status_code=404, detail="Invalid topic")
 
@@ -325,7 +318,24 @@ async def upload_frames(topic_name: str, file: UploadFile = File(...)):
     return JSONResponse({"status": "success", "filename": unique_name})
 
 @app.get("/frames/{topic_name}")
-async def list_frames(topic_name: str, query_param: str = None):
+async def list_frames(topic_name: str, query_param: str = None):   
+    config = load_config(CONFIG_PATH)
+    
+    topic = config.get("topic")
+    collection_name = config.get("collection_name")
+    domain = config.get("domain")
+    
+    root_folder, topic_folder, save_folder, processed_folder, frame_folder = get_paths(config)
+    
+    processor = Processor(
+        save_folder=save_folder,
+        processed_folder=processed_folder,
+        frame_folder=frame_folder,
+        collection_name=collection_name,
+        topic=topic,
+        domain=domain
+    )
+
     if topic_name != topic:
         raise HTTPException(status_code=404, detail="Page not found.")
     files = os.listdir(frame_folder)
@@ -337,6 +347,10 @@ async def list_frames(topic_name: str, query_param: str = None):
 
 @app.get("/frames/{topic_name}/{frame_id}")
 async def list_frames(topic_name: str, frame_id: str, query_param: str = None):
+    config = load_config(CONFIG_PATH)
+    topic = config.get("topic")
+    _, _, _, _, frame_folder = get_paths(config)
+    
     if topic_name != topic:
             raise HTTPException(status_code=404, detail="Page not found.")
     files = os.listdir(frame_folder)
@@ -350,6 +364,10 @@ async def list_frames(topic_name: str, frame_id: str, query_param: str = None):
 
 @app.get("/images/{topic_name}")
 async def list_image(topic_name: str, query_param: str = None):
+    config = load_config(CONFIG_PATH)
+    topic = config.get("topic")
+    _, _, save_folder, _, _ = get_paths(config)
+
     if topic_name != topic:
         raise HTTPException(status_code=404, detail="Page not found.")
     files = os.listdir(save_folder)
@@ -357,6 +375,10 @@ async def list_image(topic_name: str, query_param: str = None):
 
 @app.get("/images/{topic_name}/{image_id}")
 async def read_image(topic_name: str, image_id: str, query_param: str = None):
+    config = load_config(CONFIG_PATH)
+    topic = config.get("topic")
+    _, _, save_folder, _, _ = get_paths(config)
+    
     if topic_name != topic:
             raise HTTPException(status_code=404, detail="Page not found.")
     files = os.listdir(save_folder)
@@ -375,6 +397,10 @@ async def read_image(topic_name: str, image_id: str, query_param: str = None):
 
 @app.get("/raw-images/{topic_name}/{image_id}")
 async def read_image(topic_name: str, image_id: str, query_param: str = None):
+    config = load_config(CONFIG_PATH)
+    topic = config.get("topic")
+    _, _, save_folder, _, _ = get_paths(config)
+    
     if topic_name != topic:
             raise HTTPException(status_code=404, detail="Page not found.")
     files = os.listdir(save_folder)
@@ -388,6 +414,10 @@ async def read_image(topic_name: str, image_id: str, query_param: str = None):
 
 @app.get("/processed-images/{topic_name}")
 async def list_image(topic_name: str, query_param: str = None):
+    config = load_config(CONFIG_PATH)
+    topic = config.get("topic")
+    _, _, _, processed_folder, _ = get_paths(config)
+
     if topic_name != topic:
         raise HTTPException(status_code=404, detail="Page not found.")
     files = os.listdir(processed_folder)
@@ -395,6 +425,10 @@ async def list_image(topic_name: str, query_param: str = None):
 
 @app.get("/processed-images/{topic_name}/{image_id}")
 async def read_image(topic_name: str, image_id: str, query_param: str = None):
+    config = load_config(CONFIG_PATH)
+    topic = config.get("topic")
+    _, _, _, processed_folder, _ = get_paths(config)
+
     if topic_name != topic:
             raise HTTPException(status_code=404, detail="Page not found.")
     files = os.listdir(processed_folder)
@@ -406,9 +440,9 @@ async def read_image(topic_name: str, image_id: str, query_param: str = None):
                 )
     return HTTPException(status_code=404, detail="Page not found.")
 
-import uvicorn
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(
         app,
         host="0.0.0.0",  # or "127.0.0.1"

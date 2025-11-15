@@ -106,7 +106,8 @@ class Processor:
 
             # Chèn pixel tương ứng
             frame_rgb[y:y+h, x:x+w][local_mask_bool] = filtered_np[local_mask_bool]
-
+            
+        frame_rgb = frame_rgb.resize((frame_rgb.shape[1]/4, frame_rgb.shape[0]/4))
         return frame_rgb
 
     def final_process(self, frame_id, image_paths, filter_types):

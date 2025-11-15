@@ -3,7 +3,7 @@ domain: https://gacon1.gacontamnang.com/
 topic: levinh_kimanh
 collection_name: gacon
 folders:
-  root_folder: C:\Users\Administrator\Documents
+  root_folder: C:\Users\A\Documents
   save_folder: $topic_folder\images\
   processed_folder: $topic_folder\processed\
   frame_folder: $topic_folder\frames\
@@ -16,19 +16,24 @@ camera:
   streaming_camera_id: 1
 commands:
   printer:
-    win_control_printer_command:
+    control_printer_command:
     - rundll32
     - shimgvw.dll,ImageView_PrintTo
     - /pt
     - $image_path
     - $printer_code
-    win_stat_printer_command:
+    stat_printer_command:
     - powershell
     - -Command
     - Get-Printer | Select Name, PrinterStatus
   camera:
-    win_control_cam_command: C:\Program Files (x86)\digiCamControl\CameraControlCmd.exe
-    win_stat_cam_command:
+    control_cam_command:
+    - wsl
+    - gphoto2
+    - --capture-image-and-download
+    - --filename
+    - $image_path
+    stat_cam_command:
     - powershell
     - -Command
     - Get-PnpDevice | Where-Object { $_.FriendlyName -like '*$camera_code*' } | Select-Object
