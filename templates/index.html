@@ -193,9 +193,9 @@
         <div class="text-center text-gray-700 max-w-3xl">
           <h1 class="text-3xl mt-4 leading-relaxed">
             Chúng ta sẽ có
-            <span class="px-2 py-1 rounded-md bg-pinky/10 text-pinky font-bold">6 lượt chụp</span>,
+            <span class="px-2 py-1 rounded-md bg-pinky/10 text-pinky font-bold">4 lượt chụp</span>,
             mỗi lượt là khoảng
-            <span class="px-2 py-1 rounded-md bg-pinky/10 text-pinky font-bold">6 giây</span>
+            <span class="px-2 py-1 rounded-md bg-pinky/10 text-pinky font-bold">6-7 giây</span>
             <br/>
             Tạo dáng để được những bức ảnh thật đẹp nào!
           </h1>
@@ -223,9 +223,7 @@
       </section>
 
       <section class="swiper-slide relative flex items-center justify-center bg-black">
-        <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
-        <video id="camera1" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
-        <!-- <img id="video" class="absolute inset-0 w-full h-full object-cover" :src="videoSrc" alt="Live video stream"> -->
+        <img id="camera1" class="absolute inset-0 w-full h-full object-cover" alt="Live video stream">
         <div v-if="isFlashing" class="flash"></div>
         <div class="absolute top-6 left-6 text-white text-xl font-bold bg-black/30 px-4 py-2 rounded-lg shadow-md">
           1 / 4
@@ -237,9 +235,7 @@
       </section>
 
       <section class="swiper-slide relative flex items-center justify-center bg-black">
-        <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
-        <video id="camera2" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
-        <!-- <img id="video" class="absolute inset-0 w-full h-full object-cover" :src="videoSrc" alt="Live video stream"> -->
+        <img id="camera2" class="absolute inset-0 w-full h-full object-cover" alt="Live video stream">
         <div v-if="isFlashing" class="flash"></div>
         <div class="absolute top-6 left-6 text-white text-xl font-bold bg-black/30 px-4 py-2 rounded-lg shadow-md">
           2 / 4
@@ -251,9 +247,7 @@
       </section>
 
       <section class="swiper-slide relative flex items-center justify-center bg-black">
-        <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
-        <video id="camera3" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
-        <!-- <img id="video" class="absolute inset-0 w-full h-full object-cover" :src="videoSrc" alt="Live video stream"> -->
+        <img id="camera3" class="absolute inset-0 w-full h-full object-cover" alt="Live video stream">
         <div v-if="isFlashing" class="flash"></div>
         <div class="absolute top-6 left-6 text-white text-xl font-bold bg-black/30 px-4 py-2 rounded-lg shadow-md">
           3 / 4
@@ -265,9 +259,7 @@
       </section>
 
       <section class="swiper-slide relative flex items-center justify-center bg-black">
-        <!-- <video autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover" :src="videoSrc"></video> -->
-        <video id="camera4" autoplay playsinline class="w-full h-auto rounded-xl border"></video>
-        <!-- <img id="video" class="absolute inset-0 w-full h-full object-cover" :src="videoSrc" alt="Live video stream"> -->
+        <img id="camera4" class="absolute inset-0 w-full h-full object-cover" alt="Live video stream">
         <div v-if="isFlashing" class="flash"></div>
         <div class="absolute top-6 left-6 text-white text-xl font-bold bg-black/30 px-4 py-2 rounded-lg shadow-md">
           4 / 4
@@ -638,7 +630,7 @@
         timer: null,
         isFlashing: false,
         showThumb: false,
-        videoSrc: "http://127.0.0.1:8000/video_feed",
+        videoSrc: "/video-stream",
         filters: ["None", "Moon", "Sun", "Dream", "Desert", "Mint"],
         selectedFilter: "None",
         selectedLayout: null,
@@ -677,12 +669,14 @@
           this.startCountdown(10);
           this.raw_image_paths = []
           this.processed_image_path = null
+          this.startStreaming()
         }
         if (this.swiper.activeIndex >= 3 & this.swiper.activeIndex <= 6) {
           this.startCamera(this.swiper.activeIndex - 2)
           this.startPhotoCountdown(5, this.triggerCapture);
         }
         if (this.swiper.activeIndex === 7) {
+          this.stopStreaming()
           this.startCountdown(120);
         }
         if (this.swiper.activeIndex === 8) {
@@ -789,31 +783,25 @@
           alert("Error saving config: " + err)
         }
       },
+      async startStreaming() {
+        let res = await fetch('/video-start');
+      },
       async startCamera(image_id) {
         this.video = document.getElementById('camera' + image_id)
         try {
-          // Request access to front camera (for Surface or phone)
-          this.stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user" }, // "environment" for back camera
-            audio: false
-          });
-
-          this.video.srcObject = this.stream;
+          this.video.src = this.videoSrc;
         } catch (err) {
           console.error("Camera error:", err);
           alert("Could not access the camera. Check permissions.");
         }
       },
-      stopCamera() {
-        if (this.stream) {
-          this.stream.getTracks().forEach(track => track.stop());
-          this.video.srcObject = null;
-        }
+      async stopStreaming() {
+        let res = await fetch(`/video-stop`);
       },
       async triggerCapture() {
         const canvas = document.createElement("canvas");
-        canvas.width = this.video.videoWidth;
-        canvas.height = this.video.videoHeight;
+        canvas.width = this.video.naturalWidth || this.video.width;
+        canvas.height = this.video.naturalHeight || this.video.height;
 
         const ctx = canvas.getContext("2d");
         ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height);
@@ -843,7 +831,8 @@
         clearInterval(this.timer);
 
         setTimeout(() => {
-          this.stopCamera();
+          this.video.src = null;
+          // this.startStreaming()
           this.stopCountdown();
           this.swiper.slideNext();
         }, 2000);
@@ -866,10 +855,8 @@
         this.timer = setInterval(() => {
           this.countdown--;
           if (this.countdown <= 0) {
-            console.log("timeout")
             clearInterval(this.timer);
             this.swiper.slideNext();
-            this.stopCamera();
           }
           if (this.countdown == 2){
             this.isFlashing = true;

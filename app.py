@@ -21,6 +21,9 @@ import uuid
 import numpy as np
 import qrcode
 
+from threading import Thread
+import time
+
 CONFIG_PATH = Path("config.yml")
 
 # Create a FastAPI instance
@@ -39,6 +42,13 @@ app.mount("/static", StaticFiles(directory="./templates/static"), name="static")
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     with open("templates/index.html", "r", encoding="utf-8") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content, status_code=200)
+
+# Define a root path operation
+@app.get("/test", response_class=HTMLResponse)
+async def read_root():
+    with open("templates/test.html", "r", encoding="utf-8") as f:
         html_content = f.read()
     return HTMLResponse(content=html_content, status_code=200)
 
@@ -92,9 +102,7 @@ async def stat():
     printers = result.stdout.strip().splitlines()
     for line in printers:
         if printer_code in line:
-            printer_line = line.strip().split()
-            if printer_line[-1] in ["OK", "Normal"]:
-                printer_stat = True
+            printer_stat = True
 
     result = subprocess.run(
         [command.replace("$camera_code", camera_code) for command in stat_cam_command],
@@ -105,9 +113,7 @@ async def stat():
     cameras = result.stdout.strip().splitlines()
     for line in cameras:
         if camera_code in line:
-            cam_line = line.strip().split()
-            if cam_line[-1] in ["OK", "Normal"]:
-                cam_stat = True
+            cam_stat = True
 
     return {
         "message": "success",
@@ -118,53 +124,106 @@ async def stat():
     }
 
 
-def get_camera():
-    global streaming_camera
-    if streaming_camera is None or not streaming_camera.isOpened():
-        streaming_camera = cv2.VideoCapture(0)
-    return streaming_camera
+PIPE = "/tmp/cam_pipe.mjpg"
 
+from queue import Queue
+import signal
+from threading import Thread, Lock
 
-async def gen_frames(request: Request):
-    """Generator that yields camera frames as JPEG for streaming."""
-    cam = get_camera()
-    try:
+class CameraStream:
+    def __init__(self):
+        self.pipe_path = PIPE
+        self.process = None
+        self.cap = None
+        self.is_running = False
+
+    def start_gphoto2(self):
+        if not os.path.exists(self.pipe_path):
+            os.mkfifo(self.pipe_path)
+            
+        kill_gphoto_cmd = ["pkill", "-f", "gphoto2"]
+        subprocess.run(kill_gphoto_cmd)
+        
+        # def run_gphoto2(pipe_path):
+        gphoto_cmd = [
+            "bash", "running-stream.sh"
+        ]
+        
+        self.process = subprocess.Popen(gphoto_cmd)
+        
+        # gphoto_thread = Thread(target=run_gphoto2, args=(PIPE,))
+        # gphoto_thread.daemon = True  # Thread sẽ tự tắt khi chương trình chính kết thúc
+        # gphoto_thread.start()
+        
+        # self.camera_thread = gphoto_thread
+        time.sleep(1)  # Wait for gphoto2 to start
+        
+        self.cap = cv2.VideoCapture(self.pipe_path)
+        self.is_running = True
+
+    def stop_gphoto2(self):
+        kill_gphoto_cmd = ["pkill", "-f", "gphoto2"]
+        subprocess.run(kill_gphoto_cmd)
+        self.is_running = False
+        # if self.cap:
+        #     self.cap.release()
+        # if self.process:
+        #     os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+        #     self.process = None
+
+    def generate_frames(self):
         while True:
-            # Detect if the client disconnected
-            if await request.is_disconnected():
-                print("🔴 Client disconnected — stopping stream")
-                break
+            ret, frame = self.cap.read()
+            if not ret:
+                if self.is_running:
+                    print("Không đọc được frame, đợi camera...")
+                    continue
+                else:
+                    break
 
-            success, frame = cam.read()
-            if not success:
-                print("⚠️ Failed to read frame")
-                break
-
-            _, buffer = cv2.imencode('.jpg', frame)
+            # Encode frame as JPEG
+            ret, buffer = cv2.imencode('.jpg', frame)
             frame_bytes = buffer.tobytes()
 
-            yield (
-                b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n'
-            )
-    finally:
-        print("🟡 Releasing camera")
-        cam.release()
-        global streaming_camera
-        streaming_camera = None
+            # Yield MJPEG format
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
+camera = CameraStream()
 
-@app.get("/video_feed")
-async def video_feed(request: Request):
+@app.on_event("shutdown")
+async def shutdown_event():
+    camera.stop_gphoto2()
+
+@app.get("/video-stream")
+async def video_stream():
+    # if  not camera.is_running:
+    #     camera.start_gphoto2()
+
     return StreamingResponse(
-        gen_frames(request),
+        camera.generate_frames(),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
+
+@app.get("/video-start")
+async def video_start():
+    if not camera.is_running:
+        camera.start_gphoto2()
+    return {"message": "Camera stream started"}    
+
+@app.get("/video-stop")
+async def video_stop():
+    if camera.is_running:
+        camera.stop_gphoto2()
+    return {"message": "Camera stream stopped"}
 
 @app.post("/capture")
 async def capture(file: UploadFile = File(...)):
     now = datetime.now()
     timestamp = now.strftime("%Y%m%d%H%M%S")
+    
+    # if camera.is_running:
+    #     camera.stop_gphoto2()
     
     config = load_config(CONFIG_PATH)
     control_camera_command = config.get("commands").get("camera").get("control_cam_command")
@@ -175,18 +234,21 @@ async def capture(file: UploadFile = File(...)):
     with open(f"{save_folder}{collection_name}_{timestamp}.jpg", "wb") as f:
         f.write(await file.read())
 
-    try:
-        subprocess.run(
-            [
-                command.replace("$image_path", f"./{topic}/images/{collection_name}_{timestamp}.jpg") 
-                for command in control_camera_command
-            ],
-            capture_output=True,
-            timeout=3,
-            text=True
-        )
-    except subprocess.TimeoutExpired:
-        print("Capture Timeout, Fallback to webcam")
+    # try:
+    #     subprocess.run(
+    #         [
+    #             command.replace("$image_path", f"./{topic}/images/{collection_name}_{timestamp}.jpg") 
+    #             for command in control_camera_command
+    #         ],
+    #         capture_output=True,
+    #         timeout=3,
+    #         text=True
+    #     )
+    # except subprocess.TimeoutExpired:
+    #     print("Capture Timeout, Fallback to webcam")
+        
+    # if  not camera.is_running:
+    #     camera.start_gphoto2()
 
     return {"image_path": f"{collection_name}_{timestamp}.jpg"}
 

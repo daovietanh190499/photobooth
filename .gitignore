@@ -1,2 +1,6 @@
 levinh_kimanh/
 __pycache__
+.venv
+data/
+*.pyc
+.DS_Store
