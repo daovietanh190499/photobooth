@@ -145,8 +145,8 @@
             <div class="text-sm text-gray-600">Settings</div>
           </div>
           <div @click="openHelper" class="flex flex-col items-center gap-3 cursor-pointer">
-            <div class="round-btn ghost w-28 h-28"><i class="fa-solid fa-circle-question"></i></div>
-            <div class="text-sm text-gray-600">Help</div>
+            <div class="round-btn ghost w-28 h-28"><i class="fa-solid fa-rotate-right"></i></div>
+            <div class="text-sm text-gray-600">Refresh</div>
           </div>
         </div>
       </section>
@@ -602,6 +602,40 @@
             <p class="text-green-600 font-semibold">✅ Uploaded successfully!</p>
             <p class="text-gray-500 text-sm">File name: {{ uploadedFile }}</p>
           </div>
+
+          <h3 class="text-lg font-semibold mt-10 mb-3 text-pinky flex items-center gap-2">
+            Available Frames
+          </h3>
+
+          <div v-if="frames.length === 0" class="text-gray-500 italic text-center py-4">
+            No frames uploaded yet.
+          </div>
+
+          <div v-else class="grid grid-cols-3 gap-6 mt-4">
+            <div v-for="(frame, index) in frames" :key="index" class="relative">
+
+              <!-- Delete button -->
+              <button
+                @click="delete_frame('/frames/' + config.topic + '/' + frame.id)"
+                class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 shadow"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M6 7h12m-9 4v6m6-6v6M9 7V4h6v3m4 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V7h14z"/>
+                </svg>
+              </button>
+
+              <!-- Frame thumbnail -->
+              <img
+                :src="'/frames/' + config.topic + '/' + frame.id"
+                class="w-full h-48 object-cover rounded-xl shadow-md border"
+                alt="Frame Image"
+              />
+
+            </div>
+          </div>
+
         </div>
 
         <div v-if="activeTab === 'Reboot'" class="animate-fadeIn">
@@ -856,8 +890,9 @@
         this.loading = false
       },
       async openHelper() {
-        const res = await axios.get(`/config`)
-        window.location.href = res.data["domain"]
+        // const res = await axios.get(`/config`)
+        // window.location.href = res.data["domain"]
+        window.location.reload()
       },
       async saveConfig() {
         try {
@@ -1099,11 +1134,23 @@
           const data = await res.json();
           this.uploadedFile = data.filename;
           this.cancelUpload();
+          await this.fetchFrames();
         } catch (err) {
           alert("Upload failed!");
         } finally {
           this.uploading = false;
         }
+      },
+
+      delete_frame(frame) {
+        // if (!confirm("Are you sure you want to delete this frame?")) return;
+        axios.delete(frame)
+          .then(() => {
+            this.fetchFrames();
+          })
+          .catch(err => {
+            alert("Error deleting frame: " + err);
+          });
       },
 
       async reboot() {

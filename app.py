@@ -447,6 +447,22 @@ async def retrieve_frames(topic_name: str, frame_id: str, query_param: str = Non
                 )
     return HTTPException(status_code=404, detail="Page not found.")
 
+@app.delete("/frames/{topic_name}/{frame_id}")
+async def delete_frame(topic_name: str, frame_id: str, query_param: str = None):
+    config = load_config(CONFIG_PATH)
+    topic = config.get("topic")
+    _, _, _, _, frame_folder = get_paths(config)
+    
+    if topic_name != topic:
+            raise HTTPException(status_code=404, detail="Page not found.")
+    files = os.listdir(frame_folder)
+    for file in files:
+        if frame_id in file:
+            os.remove(f"{frame_folder}{file}")
+            return {"message": "Frame deleted successfully."}
+
+    return HTTPException(status_code=404, detail="Page not found.")
+
 @app.get("/images/{topic_name}")
 async def list_image(topic_name: str, query_param: str = None):
     config = load_config(CONFIG_PATH)
