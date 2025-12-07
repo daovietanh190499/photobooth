@@ -352,12 +352,16 @@ async def print_image(print_info: PrintInfo):
     topic = config.get("topic")
     
     full_command = []
+    
+    image_path = config.get("folders").get("work_folder", "./") + print_info.image_path[2:]
+    
     for command in control_printer_command:
         full_command.append(
-            str(command).replace("$image_path", print_info.image_path).replace("$printer_code", printer_name)
+            str(command).replace("$image_path", image_path).replace("$printer_code", printer_name)
         )
 
-    subprocess.run(" ".join(full_command))
+    # subprocess.run(" ".join(full_command))
+    subprocess.run(full_command)
     
     qr_data = f"{domain}/{topic}/processed/{os.path.split(print_info.image_path)[-1]}"
     qr_img = qrcode.make(qr_data).convert("RGB")

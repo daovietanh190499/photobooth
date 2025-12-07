@@ -3,6 +3,7 @@ domain: https://gacon1.gacontamnang.com/
 topic: vietanh_oanhyen
 collection_name: gacon
 folders:
+  work_folder: /home/gacontamnang/photobooth/
   root_folder: ./data
   save_folder: $topic_folder/images/
   processed_folder: $topic_folder/processed/
