@@ -1,6 +1,6 @@
-operating_system: Windows
+operating_system: Ubuntu
 domain: https://gacon1.gacontamnang.com/
-topic: levinh_kimanh
+topic: vietanh_oanhyen
 collection_name: gacon
 folders:
   root_folder: ./data
@@ -12,16 +12,29 @@ printer:
   code: CP1000
 camera:
   name: Nikon D3300
-  code: D3300
+  code: d3300
   streaming_camera_id: 1
 commands:
   printer:
     control_printer_command:
-    - rundll32
-    - shimgvw.dll,ImageView_PrintTo
-    - /pt
-    - $image_path
+    - lp
+    - -d
     - $printer_code
+    - -o
+    - PageSize=Postcard
+    - -o
+    - StpBorderless=True
+    - -o
+    - StpiShrinkOutput=Expand
+    - -o
+    - orientation-requested=4
+    - -o
+    - scaling=100
+    - -o
+    - fit-to-page
+    - -n
+    - 1
+    - $image_path
     stat_printer_command:
     - lpstat
     - -p
@@ -33,5 +46,31 @@ commands:
     - $image_path
     - --force-overwrite
     stat_cam_command:
-    - gphoto2 
+    - gphoto2
     - --auto-detect
+  system:
+    reboot_command:
+    - sudo
+    - reboot
+    list_wifi_command:
+    - nmcli
+    - -t
+    - -f
+    - SSID,SIGNAL,SECURITY
+    - device
+    - wifi
+    - list
+    connect_wifi_command:
+    - sudo
+    - nmcli
+    - device
+    - wifi
+    - connect
+    - $wifi_ssid
+    - password
+    - $wifi_password
+    - ifname
+    - $wifi_iface
+wifi:
+  ssid: Viettel_MinhThuyen
+  password: 04071965

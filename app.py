@@ -6,7 +6,7 @@ from process import Processor
 from datetime import datetime
 from pathlib import Path
 
-from utils import load_config, get_paths
+from utils import load_config, get_paths, list_wifi, connect_wifi
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File
 from fastapi.responses import HTMLResponse, StreamingResponse, FileResponse, JSONResponse
@@ -67,6 +67,7 @@ class ConfigModel(BaseModel):
     printer: dict
     camera: dict
     commands: dict
+    wifi: dict
 
 @app.get("/config")
 def get_config():
@@ -101,7 +102,7 @@ async def stat():
 
     printers = result.stdout.strip().splitlines()
     for line in printers:
-        if printer_code in line:
+        if printer_code.lower() in line.lower():
             printer_stat = True
 
     result = subprocess.run(
@@ -112,7 +113,7 @@ async def stat():
 
     cameras = result.stdout.strip().splitlines()
     for line in cameras:
-        if camera_code in line:
+        if camera_code.lower() in line.lower():
             cam_stat = True
 
     return {
@@ -346,17 +347,17 @@ async def print_image(print_info: PrintInfo):
     
     config = load_config(CONFIG_PATH)
     control_printer_command = config.get("commands").get("printer").get("control_printer_command")
-    printer_name = config.get("printer").get("name")
+    printer_name = config.get("printer").get("code")
     domain = config.get("domain")
     topic = config.get("topic")
     
     full_command = []
     for command in control_printer_command:
         full_command.append(
-            command.replace("$image_path", print_info.image_path).replace("$printer_code", printer_name)
+            str(command).replace("$image_path", print_info.image_path).replace("$printer_code", printer_name)
         )
 
-    subprocess.run(full_command, shell=True)
+    subprocess.run(" ".join(full_command))
     
     qr_data = f"{domain}/{topic}/processed/{os.path.split(print_info.image_path)[-1]}"
     qr_img = qrcode.make(qr_data).convert("RGB")
@@ -368,6 +369,20 @@ async def print_image(print_info: PrintInfo):
         io.BytesIO(img_encoded.tobytes()),
         media_type="image/jpeg"
     )
+
+@app.get("/reboot")
+async def reboot():
+    
+    config = load_config(CONFIG_PATH)
+    reboot = config.get("commands").get("system").get("reboot_command")
+    
+    full_command = []
+    for command in reboot:
+        full_command.append(str(command))
+
+    subprocess.run(full_command)
+
+    return {"message": "Rebooting system..."}
 
 @app.post("/frames/{topic_name}")
 async def upload_frames(topic_name: str, file: UploadFile = File(...)):
@@ -510,6 +525,28 @@ async def read_processed_image(topic_name: str, image_id: str, query_param: str 
                 )
     return HTTPException(status_code=404, detail="Page not found.")
 
+@app.get("/wifis")
+async def list_wifi_api():   
+    config = load_config(CONFIG_PATH)
+    
+    list_wifi_command = config.get("commands").get("system").get("list_wifi_command")
+    
+    wifis = list_wifi(cmd=list_wifi_command)
+
+    return {"wifis": wifis}
+
+@app.post("/connect-wifi")
+async def connect_wifi_api():   
+    config = load_config(CONFIG_PATH)
+    
+    connect_wifi_command = config.get("commands").get("system").get("connect_wifi_command")
+    
+    wifis = connect_wifi(cmd=connect_wifi_command,
+                         ssid=config.get("wifi").get("ssid"),
+                         password=config.get("wifi").get("password"),
+                         iface=None)
+
+    return {"message": "Connected to WiFi successfully."}
 
 if __name__ == "__main__":
     import uvicorn
