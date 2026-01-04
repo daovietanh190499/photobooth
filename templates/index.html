@@ -455,7 +455,7 @@
             <button class="px-8 py-3 rounded-full ghost border" @click="goHome()">
               <i class="fa-solid fa-circle-xmark"></i> Không
             </button>
-            <button class="px-8 py-3 rounded-full bg-pinky-100 text-red-600 border border-pinky-300" @click="printImage()">
+            <button class="px-8 py-3 rounded-full bg-pinky-100 text-red-600 border border-pinky-300" @click="printImage(processedImage)">
               <i class="fa-solid fa-print"></i> In ảnh
             </button>
           </div>
@@ -1130,23 +1130,37 @@
           this.loading = false;
         }
       },
-      async printImage() {
+      async printImage(url) {
         if (!this.selectedLayout) return;
-        const body = {
-          image_path: this.finalProcessImagePath
-        };
+        // const body = {
+        //   image_path: this.finalProcessImagePath
+        // };
         try {
-          const res = await fetch("/print", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          const blob = await res.blob();
-          const imageUrl = URL.createObjectURL(blob);
-          this.processedImage = imageUrl;
-          setTimeout(() => {
-            this.goHome()
-          }, 10000);
+          // const res = await fetch("/print", {
+          //   method: "POST",
+          //   headers: { "Content-Type": "application/json" },
+          //   body: JSON.stringify(body),
+          // });
+          // const blob = await res.blob();
+          // const imageUrl = URL.createObjectURL(blob);
+          // this.processedImage = imageUrl;
+          // setTimeout(() => {
+          //   this.goHome()
+          // }, 10000);
+
+          // 1. Create an invisible iframe
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = this.processedImage.replace(".jpg", ".pdf"); // Assuming the server provides a PDF version
+
+          // 2. Append to the document
+          document.body.appendChild(iframe);
+
+          // 3. Wait for the PDF to load, then trigger print
+          iframe.onload = () => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          };
         } catch (e) {
           console.error(e);
         }

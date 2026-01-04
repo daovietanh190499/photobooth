@@ -201,7 +201,21 @@ class Processor:
         # --- Fallback: force 4x6 ratio ---
         else:
             resized = img
+            
+        # new_img = np.ones((resized.shape[0] + 120*2, resized.shape[1] + 175*2, 3), dtype=np.uint8)*255
 
-        cv2.imwrite(output_path, resized)
+        # new_img[120:120+resized.shape[0], 175:175+resized.shape[1], :] = resized
+        # new_img[120, :, :] = 255
+        # new_img[120+resized.shape[0] - 1, :, :] = 255
+
+        new_img = resized
+        
+        cv2.imwrite(output_path, new_img)
+
+        img_rgb = cv2.cvtColor(new_img, cv2.COLOR_BGR2RGB)
+        
+        image = Image.fromarray(img_rgb)
+        
+        image.save(output_path.replace(".jpg", ".pdf"), "PDF", save_all=True)
 
         return output_path,  f"{self.collection_name}_{frame_id.split(".")[0]}_{image_index}.jpg"

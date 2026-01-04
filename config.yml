@@ -26,13 +26,19 @@ commands:
     - -o
     - StpBorderless=True
     - -o
-    - StpiShrinkOutput=Expand
+    - StpiShrinkOutput=None
     - -o
     - orientation-requested=4
     - -o
     - scaling=100
     - -o
-    - fit-to-page
+    - natural-scaling=100
+    - -o
+    - fit-to-page=False
+    - -o
+    - StpBorderlessExpand=False
+    - -o
+    - StpScale=False
     - -n
     - 1
     - $image_path
@@ -73,5 +79,5 @@ commands:
     - ifname
     - $wifi_iface
 wifi:
-  ssid: Viettel_MinhThuyen
-  password: 04071965
+  ssid: VNPT_Doi_5G
+  password: 0966236112

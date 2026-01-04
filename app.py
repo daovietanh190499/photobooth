@@ -137,6 +137,7 @@ class CameraStream:
         self.process = None
         self.cap = None
         self.is_running = False
+        self.counting = 0
 
     def start_gphoto2(self):
         if not os.path.exists(self.pipe_path):
@@ -164,7 +165,7 @@ class CameraStream:
 
     def stop_gphoto2(self):
         kill_gphoto_cmd = ["pkill", "-f", "gphoto2"]
-        subprocess.run(kill_gphoto_cmd)
+        subprocess.run(kill_gphoto_cmd, check=True)
         self.is_running = False
         # if self.cap:
         #     self.cap.release()
@@ -178,17 +179,23 @@ class CameraStream:
             if not ret:
                 if self.is_running:
                     print("Không đọc được frame, đợi camera...")
-                    continue
+                    # self.counting += 1
+                    # if self.counting == 10:
+                    self.cap.release()
+                    self.cap = cv2.VideoCapture(self.pipe_path)
+                    # self.counting = 0
                 else:
                     break
+            try:
+                # Encode frame as JPEG
+                ret, buffer = cv2.imencode('.jpg', frame)
+                frame_bytes = buffer.tobytes()
 
-            # Encode frame as JPEG
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame_bytes = buffer.tobytes()
-
-            # Yield MJPEG format
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                # Yield MJPEG format
+                yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            except Exception as e:
+                continue
 
 camera = CameraStream()
 
@@ -223,9 +230,6 @@ async def capture(file: UploadFile = File(...)):
     now = datetime.now()
     timestamp = now.strftime("%Y%m%d%H%M%S")
     
-    # if camera.is_running:
-    #     camera.stop_gphoto2()
-    
     config = load_config(CONFIG_PATH)
     control_camera_command = config.get("commands").get("camera").get("control_cam_command")
     topic = config.get("topic")
@@ -238,18 +242,16 @@ async def capture(file: UploadFile = File(...)):
     # try:
     #     subprocess.run(
     #         [
-    #             command.replace("$image_path", f"./{topic}/images/{collection_name}_{timestamp}.jpg") 
-    #             for command in control_camera_command
+    #             "bash", "running-capture.sh",
+    #             f"{config.get("folders").get("work_folder")}/data/{topic}/images/{collection_name}_{timestamp}.jpg"
     #         ],
     #         capture_output=True,
-    #         timeout=3,
-    #         text=True
+    #         timeout=5,
+    #         text=True,
+    #         check=True
     #     )
     # except subprocess.TimeoutExpired:
     #     print("Capture Timeout, Fallback to webcam")
-        
-    # if  not camera.is_running:
-    #     camera.start_gphoto2()
 
     return {"image_path": f"{collection_name}_{timestamp}.jpg"}
 
@@ -539,10 +541,17 @@ async def read_processed_image(topic_name: str, image_id: str, query_param: str 
     files = os.listdir(processed_folder)
     for file in files:
         if image_id in file:
-                return FileResponse(
-                    path=f"{processed_folder}{file}",
-                    media_type="image/jpeg"
-                )
+                ext = file.split(".")[-1]
+                if ext == "pdf":
+                    return FileResponse(
+                        path=f"{processed_folder}{file}",
+                        media_type="application/pdf"
+                    )
+                else:
+                    return FileResponse(
+                        path=f"{processed_folder}{file}",
+                        media_type="image/jpeg"
+                    )
     return HTTPException(status_code=404, detail="Page not found.")
 
 @app.get("/wifis")
