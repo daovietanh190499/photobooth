@@ -142,9 +142,6 @@ class CameraStream:
     def start_gphoto2(self):
         if not os.path.exists(self.pipe_path):
             os.mkfifo(self.pipe_path)
-            
-        kill_gphoto_cmd = ["pkill", "-f", "gphoto2"]
-        subprocess.run(kill_gphoto_cmd)
         
         # def run_gphoto2(pipe_path):
         gphoto_cmd = [
@@ -152,12 +149,7 @@ class CameraStream:
         ]
         
         self.process = subprocess.Popen(gphoto_cmd)
-        
-        # gphoto_thread = Thread(target=run_gphoto2, args=(PIPE,))
-        # gphoto_thread.daemon = True  # Thread sẽ tự tắt khi chương trình chính kết thúc
-        # gphoto_thread.start()
-        
-        # self.camera_thread = gphoto_thread
+
         time.sleep(1)  # Wait for gphoto2 to start
         
         self.cap = cv2.VideoCapture(self.pipe_path)
@@ -167,15 +159,15 @@ class CameraStream:
         kill_gphoto_cmd = ["pkill", "-f", "gphoto2"]
         subprocess.run(kill_gphoto_cmd, check=True)
         self.is_running = False
-        # if self.cap:
-        #     self.cap.release()
-        # if self.process:
-        #     os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
-        #     self.process = None
+        if self.cap:
+            self.cap.release()
 
     def generate_frames(self):
         while True:
-            ret, frame = self.cap.read()
+            if self.is_running and not (self.cap is None):
+                ret, frame = self.cap.read()
+            else:
+                ret = None
             if not ret:
                 if self.is_running:
                     print("Không đọc được frame, đợi camera...")
@@ -205,8 +197,8 @@ async def shutdown_event():
 
 @app.get("/video-stream")
 async def video_stream():
-    # if  not camera.is_running:
-    #     camera.start_gphoto2()
+    if  not camera.is_running:
+        camera.start_gphoto2()
 
     return StreamingResponse(
         camera.generate_frames(),
@@ -238,20 +230,23 @@ async def capture(file: UploadFile = File(...)):
     
     with open(f"{save_folder}{collection_name}_{timestamp}.jpg", "wb") as f:
         f.write(await file.read())
+        
+    if camera.is_running:
+        camera.stop_gphoto2()
 
-    # try:
-    #     subprocess.run(
-    #         [
-    #             "bash", "running-capture.sh",
-    #             f"{config.get("folders").get("work_folder")}/data/{topic}/images/{collection_name}_{timestamp}.jpg"
-    #         ],
-    #         capture_output=True,
-    #         timeout=5,
-    #         text=True,
-    #         check=True
-    #     )
-    # except subprocess.TimeoutExpired:
-    #     print("Capture Timeout, Fallback to webcam")
+    try:
+        subprocess.run(
+            [
+                "bash", "running-capture.sh",
+                f"{config.get("folders").get("work_folder")}/data/{topic}/images/{collection_name}_{timestamp}.jpg"
+            ],
+            capture_output=True,
+            timeout=5,
+            text=True,
+            check=True
+        )
+    except subprocess.TimeoutExpired:
+        print("Capture Timeout, Fallback to webcam")
 
     return {"image_path": f"{collection_name}_{timestamp}.jpg"}
 

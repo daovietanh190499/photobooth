@@ -838,7 +838,10 @@
         }
         if (this.swiper.activeIndex >= 3 & this.swiper.activeIndex <= 6) {
           this.startCamera(this.swiper.activeIndex - 2)
-          this.startPhotoCountdown(5, this.triggerCapture);
+          setTimeout(() => {
+            this.reloadCamera(this.swiper.activeIndex - 2)
+            this.startPhotoCountdown(5, this.triggerCapture);
+          }, 2000);
         }
         if (this.swiper.activeIndex === 7) {
           this.stopStreaming()
@@ -961,11 +964,15 @@
       async startCamera(image_id) {
         this.video = document.getElementById('camera' + image_id)
         try {
-          this.video.src = this.videoSrc;
+          this.video.src = null;
         } catch (err) {
           console.error("Camera error:", err);
           alert("Could not access the camera. Check permissions.");
         }
+      },
+      reloadCamera(image_id) {
+        this.video = document.getElementById('camera' + image_id)
+        this.video.src = this.videoSrc + `?t=${Date.now()}`;
       },
       async stopStreaming() {
         let res = await fetch(`/video-stop`);
@@ -1004,7 +1011,7 @@
 
         setTimeout(() => {
           this.video.src = null;
-          // this.startStreaming()
+          this.startStreaming()
           this.stopCountdown();
           this.swiper.slideNext();
         }, 2000);
